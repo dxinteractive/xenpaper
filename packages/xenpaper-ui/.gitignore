@@ -1,0 +1,14 @@
+# Config Files
+**/.idea/tasks.xml
+**/.idea/workspace.xml
+.DS_Store
+.env
+.nyc_output
+*.log
+
+# Folders
+coverage
+dist
+docs
+node_modules
+/lib

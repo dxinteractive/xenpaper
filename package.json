@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "yarn lerna run test",
+    "lint": "yarn lerna run lint",
+    "build": "yarn lerna run build",
+    "prep": "yarn && yarn lerna bootstrap",
+    "reinstall": "rm -rf node_modules && rm -rf packages/*/node_modules && yarn prep"
+  },
+  "dependencies": {
+    "lerna": "^3.10.7"
+  },
+  "workspaces": {
+    "packages": ["packages/*"],
+    "nohoist": ["**/tsdx", "**/tsdx/**", "**/@types/**"]
+  }
+}
