@@ -14,7 +14,7 @@ jobs:
           node-version: 12.x
 
       - name: Install dependencies
-        run: yarn prep --frozen-lockfile
+        run: yarn prep
         env:
           CI: true
 
