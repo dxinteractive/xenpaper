@@ -530,7 +530,7 @@ function EmbedLayout(props: EmbedLayoutProps): React.ReactElement {
                 {loop}
                 {openOnXenpaper}
             </Toolbar>
-            <Box flexGrow="1" flexShrink="1" pl={[0,3]} overflow="auto" mt={3} pt={['24px',3]} {...codepaneContainerProps}>
+            <Box flexGrow="1" flexShrink="1" overflow="auto" mt={3} pt="24px" {...codepaneContainerProps}>
                 {code}
             </Box>
         </Flex>
