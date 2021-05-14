@@ -23,9 +23,10 @@ export function Sidebars(props: Props): React.ReactElement|null {
     const {sidebar, onSetTune, setSidebar, tuneForm} = props;
     return <>
         {sidebar === 'info' && <SidebarInfo onSetTune={onSetTune} setSidebar={setSidebar} />}
-        {sidebar === 'share' && tuneForm.render('url', form => {
-            const url = form.useValue();
-            return <SidebarShare setSidebar={setSidebar} url={url} />;
+        {sidebar === 'share' && tuneForm.render(form => {
+            const url = form.branch('url').useValue();
+            const urlEmbed = form.branch('urlEmbed').useValue();
+            return <SidebarShare setSidebar={setSidebar} url={url} urlEmbed={urlEmbed} />;
         })}
     </>;
 }
@@ -168,25 +169,49 @@ const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
 type SidebarShareProps = {
     setSidebar: (open: SidebarState) => void;
     url: string;
+    urlEmbed: string;
 };
 
 const SidebarShare = (props: SidebarShareProps): React.ReactElement => {
-    const {setSidebar, url} = props;
+    const {setSidebar, url, urlEmbed} = props;
 
-    const [copied, setCopied] = useState<boolean>(false);
+    const iframeCode = `<iframe width="560" height="315" src="${urlEmbed}" title="Xenpaper" frameborder="0"></iframe>`;
+
+    const [copiedLink, setCopiedLink] = useState<boolean>(false);
+    const [copiedIframe, setCopiedIframe] = useState<boolean>(false);
 
     return <Sidebar setSidebar={setSidebar}>
-        <H>Share link</H>
-        <Flex>
-            <ShareInput value={url} />
-            <Box flexShrink="0" ml={3}>
-                <CopyToClipboard text={url} onCopy={() => setCopied(true)}>
-                    <TryButton>{copied ? 'Copied' : 'Copy'}</TryButton>
-                </CopyToClipboard>
+        <Box>
+            <H>Share link</H>
+            <Flex>
+                <ShareInput value={url} />
+                <Box flexShrink="0" ml={3}>
+                    <CopyToClipboard text={url} onCopy={() => setCopiedLink(true)}>
+                        <TryButton>{copiedLink ? 'Copied' : 'Copy'}</TryButton>
+                    </CopyToClipboard>
+                </Box>
+            </Flex>
+        </Box>
+        <Box pt={4}>
+            <H>Embed</H>
+            <Flex>
+                <ShareInput value={iframeCode} />
+                <Box flexShrink="0" ml={3}>
+                    <CopyToClipboard text={url} onCopy={() => setCopiedIframe(true)}>
+                        <TryButton>{copiedIframe ? 'Copied' : 'Copy'}</TryButton>
+                    </CopyToClipboard>
+                </Box>
+            </Flex>
+            <Box pt={3}>
+                <EmbedIframe key={urlEmbed} src={urlEmbed} frameBorder="0" />
             </Box>
-        </Flex>
+        </Box>
     </Sidebar>;
 };
+
+const EmbedIframe = styled.iframe`
+    width: 100%;
+`;
 
 const ShareInput = styled.input.attrs(() => ({readOnly: true}))`
     width: 100%;
