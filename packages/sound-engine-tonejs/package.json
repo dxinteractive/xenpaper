@@ -1,0 +1,21 @@
+{
+  "name": "@xenpaper/sound-engine-tonejs",
+  "main": "src/sound-engine-tonejs.ts",
+  "version": "0.0.1",
+  "description": "tonejs",
+  "license": "UNLICENSED",
+  "author": "Damien Clarke",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:xenpaper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xenpaper/issues"
+  },
+  "scripts": {},
+  "dependencies": {
+    "tone": "^14.7.58"
+  },
+  "peerDependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,9 @@
+
+.DS_Store
+coverage
+dist
+lib
+node_modules
+*.log
+.cache
+docs
