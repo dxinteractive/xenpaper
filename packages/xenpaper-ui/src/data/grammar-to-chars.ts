@@ -48,6 +48,7 @@ const colorMap = new Map<string,HighlightColor>([
     ['SetRoot','scaleGroup'],
     ['SetRoot.Pitch','scale'],
     ['SetBpm','setter'],
+    ['SetBms','setter'],
     ['SetSubdivision','setter'],
     ['SetOsc','setter'],
     ['SetEnv','setter'],
