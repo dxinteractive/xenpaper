@@ -211,6 +211,20 @@ const SidebarShare = (props: SidebarShareProps): React.ReactElement => {
 
 const EmbedIframe = styled.iframe`
     width: 100%;
+    position: relative;
+    opacity: 1;
+    top: 0;
+
+    @keyframes onShow {
+        0% {
+            opacity: 0;
+            top: .25rem;
+        }
+        100% {
+            opacity: 1;
+            top: 0;
+        }
+    }
 `;
 
 const ShareInput = styled.input.attrs(() => ({readOnly: true}))`
@@ -262,11 +276,10 @@ const Sidebar = (props: SidebarProps): React.ReactElement => {
 const TextPanel = styled(Box)`
     background-color: ${props => props.theme.colors.background.light};
     font-family: ${props => props.theme.fonts.copy};
-    position: relative;
     animation: .3s ease-out onShow;
-    position: relative;
     overflow: auto;
 
+    position: relative;
     opacity: 1;
     top: 0;
 

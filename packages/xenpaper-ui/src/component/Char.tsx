@@ -4,6 +4,8 @@ import type {HighlightColor} from '../data/grammar-to-chars';
 interface Props {
     readonly color?: HighlightColor;
     readonly children: React.ReactNode;
+    layoutMode?: boolean;
+    layoutModeButton?: boolean;
 }
 
 export const Char = styled.span<Props>`
@@ -14,4 +16,16 @@ export const Char = styled.span<Props>`
         transition: color 0s 0s linear;
         color: #fff;
     }
+
+    ${props => props.layoutMode && `
+        border-width: 0px;
+        border-style: solid;
+        border-color: transparent;
+    `}
+
+    ${props => props.layoutModeButton && `
+        cursor: pointer;
+        border-color: ${props.theme.colors.background.light};
+        background-color: ${props.theme.colors.background.light};
+    `}
 `;

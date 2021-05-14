@@ -178,14 +178,10 @@ export function Xenpaper(): React.ReactElement {
 
 export type SidebarState = 'info'|'share'|'none';
 
-// type RealtimeState = {
-//     on: boolean;
-//     activeNotes: number[];
-// };
-
 export type TuneForm = {
     tune: string;
     embed: boolean;
+    layout: boolean;
     hash: string;
     url: string;
     urlEmbed: string;
@@ -206,14 +202,20 @@ export function XenpaperApp(props: Props): React.ReactElement {
 
     const tuneForm = useDendriform<TuneForm>(() => {
         let embed = false;
+        let layout = false;
         let tune = hash;
         if(tune.startsWith('embed:')) {
             embed = true;
             tune = tune.substr(6);
         }
+        if(tune.startsWith('layout:')) {
+            layout = true;
+            tune = tune.substr(7);
+        }
         return {
             tune,
             embed,
+            layout,
             hash: '',
             url: '',
             urlEmbed: ''
@@ -222,6 +224,11 @@ export function XenpaperApp(props: Props): React.ReactElement {
 
     tuneForm.useDerive(newValue => {
         let hash = newValue.tune;
+
+        if(newValue.layout) {
+            hash = `layout:${hash}`;
+        }
+
         const hashified = hashify(hash);
 
         if(newValue.embed) {
@@ -252,20 +259,19 @@ export function XenpaperApp(props: Props): React.ReactElement {
     });
 
     //
-    // ui modes
+    // layout mode state
     //
 
-    /*const layoutMode = useDendriform<RealtimeState>({
-        on: false,
-        activeNotes: []
-    });
+    const layoutModeActiveNotes = useDendriform<number[]>([]);
 
-    const handleToggleRealtime = useCallback(() => {
-        layoutMode.set(draft => {
-            draft.on = !draft.on;
-            draft.activeNotes = [];
-        });
-    }, []);*/
+    const handleToggleLayout = useCallback(() => {
+        layoutModeActiveNotes.set([]);
+        tuneForm.branch('layout').set(layout => !layout);
+    }, []);
+
+    const onMouseUp = useCallback(() => {
+        layoutModeActiveNotes.set([]);
+    }, []);
 
     //
     // state syncing between sound engine and react
@@ -353,18 +359,6 @@ export function XenpaperApp(props: Props): React.ReactElement {
         // TODO
     }, []);
 
-    // release layoutMode notes
-
-    const onMouseUp = useCallback(() => {
-        // TODO, why errors?
-        //layoutMode.branch('activeNotes').set([]);
-    }, []);
-
-    const codepaneContainerProps = {
-        onClick: focusCodearea,
-        onMouseUp
-    };
-
     //
     // elements
     //
@@ -392,6 +386,10 @@ export function XenpaperApp(props: Props): React.ReactElement {
         return <SideButton onClick={handleToggleLoop} active={looping.useValue()}>Loop</SideButton>;
     });
 
+    const layoutMode = tuneForm.branch('layout').render(layoutMode => {
+        return <SideButton multiline onClick={handleToggleLayout} active={layoutMode.useValue()}>Layout<br/>mode</SideButton>;
+    });
+
     const sidebarToggles = <>
         <SideButton onClick={toggleSidebarInfo}>Info</SideButton>
         <SideButton onClick={toggleSidebarShare}>Share</SideButton>
@@ -404,13 +402,22 @@ export function XenpaperApp(props: Props): React.ReactElement {
         tuneForm={tuneForm}
     />;
 
-    const code = <CodePanel tuneForm={tuneForm} parsedForm={parsedForm} />;
+    const code = <CodePanel
+        tuneForm={tuneForm}
+        parsedForm={parsedForm}
+        layoutModeActiveNotes={layoutModeActiveNotes}
+    />;
 
     const htmlTitle = <SetHtmlTitle tuneForm={tuneForm} />;
 
     const openOnXenpaper = tuneForm.render('url', form => (
         <EditOnXenpaperButton href={form.useValue()} target="_blank">Edit on Xenpaper</EditOnXenpaperButton>
     ));
+
+    const codepaneContainerProps = {
+        onClick: focusCodearea,
+        onMouseUp
+    };
 
     const embedLayout = tuneForm.branch('embed').useValue();
 
@@ -429,16 +436,13 @@ export function XenpaperApp(props: Props): React.ReactElement {
         playPause={playPause}
         undoRedo={undoRedo}
         loop={loop}
+        layoutMode={layoutMode}
         code={code}
         htmlTitle={htmlTitle}
         sidebarToggles={sidebarToggles}
         sidebar={sidebar}
         codepaneContainerProps={codepaneContainerProps}
     />;
-
-    /* layoutMode.branch('on').render(layoutMode => {
-                    return <SideButton multiline onClick={handleToggleRealtime} active={layoutMode.useValue()}>Layout<br/>mode</SideButton>;
-                })*/
 }
 
 //
@@ -449,6 +453,7 @@ type NormalLayoutProps = {
     playPause: React.ReactNode;
     undoRedo: React.ReactNode;
     loop: React.ReactNode;
+    layoutMode: React.ReactNode;
     code: React.ReactNode;
     htmlTitle: React.ReactNode;
     sidebarToggles: React.ReactNode;
@@ -461,6 +466,7 @@ function NormalLayout(props: NormalLayoutProps): React.ReactElement {
         playPause,
         undoRedo,
         loop,
+        layoutMode,
         code,
         htmlTitle,
         sidebarToggles,
@@ -475,6 +481,7 @@ function NormalLayout(props: NormalLayoutProps): React.ReactElement {
                 {playPause}
                 {undoRedo}
                 {loop}
+                {layoutMode}
             </Toolbar>
             {/* toolbar on desktop */}
             <Toolbar display={['none','block']} mt={4} px={2} pt="12px">
@@ -483,6 +490,7 @@ function NormalLayout(props: NormalLayoutProps): React.ReactElement {
                 </Box>
                 {undoRedo}
                 {loop}
+                {layoutMode}
                 <Hr my={2} />
                 {sidebarToggles}
             </Toolbar>
@@ -545,10 +553,13 @@ function EmbedLayout(props: EmbedLayoutProps): React.ReactElement {
 type CodePanelProps = {
     tuneForm: Dendriform<TuneForm>;
     parsedForm: Dendriform<Parsed>;
+    layoutModeActiveNotes: Dendriform<number[]>;
 };
 
 function CodePanel(props: CodePanelProps): React.ReactElement {
-    return props.tuneForm.render(form => {
+    const {tuneForm, layoutModeActiveNotes, parsedForm} = props;
+
+    return tuneForm.render(form => {
 
         const embed = form.branch('embed').useValue();
 
@@ -559,9 +570,9 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
         }, []);
 
         // get dendriform state values
-        const {chars, error} = props.parsedForm.useValue();
-        const layoutModeOn = false; //layoutMode.branch('on').useValue();
-        const layoutModeNotes: number[] = []; // layoutMode.branch('activeNotes').useValue();
+        const {chars, error} = parsedForm.useValue();
+        const layoutModeOn = tuneForm.branch('layout').useValue();
+        const layoutModeNotes: number[] = layoutModeActiveNotes.useValue();
 
         // use value with a 200ms debounce for perf reasons
         // this debounce does cause the code vlue to progress forwad
@@ -579,14 +590,16 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
             layoutModeNotes
         );
 
-        const charElements = charElementProps.map(({...props}, index) => { // noteId,
+        const charElements = charElementProps.map(({noteId, ...props}, index) => {
             if(!layoutModeOn) {
+                // normal highlighted characters while editing
                 return <Char key={index} {...props} />;
             }
 
-            /*const onPress = () => {
+            // highlighted characters with interaction handling for layout mode
+            const onPress = () => {
                 if(noteId !== undefined) {
-                    layoutMode.branch('activeNotes').set(draft => {
+                    layoutModeActiveNotes.set(draft => {
                         draft.push(noteId);
                     });
                 }
@@ -596,8 +609,9 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
                 key={index}
                 {...props}
                 onMouseDown={onPress}
-            />;*/
-            return null;
+                layoutMode
+                layoutModeButton={noteId !== undefined}
+            />;
         });
 
         // stop event propagation here so we can detect clicks outside of this element in isolation
