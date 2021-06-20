@@ -76,16 +76,12 @@ const parse = (unparsed: string): Parsed => {
         const chars: CharData[] = [];
         let lineCount = 0;
         let colCount = 0;
-        let hasError = false;
+        let error;
+        let errorAt;
 
         for(let i = 0; i < unparsed.length + 40; i++) {
             if(lineCount === lineNumber && colCount === colNumber) {
-                hasError = true;
-            }
-            if(hasError) {
-                chars[i] = {
-                    color: 'error'
-                };
+                errorAt = i;
             }
             if (unparsed[i] === '\n') {
                 lineCount++;
@@ -96,11 +92,18 @@ const parse = (unparsed: string): Parsed => {
             }
         }
 
+        if(typeof errorAt === 'number') {
+            error = e.message.replace('Unexpected token ', `Unexpected token "${unparsed[errorAt]}" `);
+            chars[errorAt] = {
+                color: 'error'
+            };
+        }
+
         return {
             parsed: undefined,
             chars,
             score: undefined,
-            error: e.message
+            error
         };
     }
 };

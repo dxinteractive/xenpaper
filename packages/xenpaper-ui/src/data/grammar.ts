@@ -340,7 +340,7 @@ export type PitchGroupScalePrefixType = NodeType & {
 
 export const PitchGroupScalePrefix = node/*<EdoScaleType>*/(
     'PitchGroupScalePrefix',
-    /([m])(\s*)/,
+    /(^[m])(\s*)/,
     ([prefix, space]: [string, string?]) => ({
         prefix,
         len: prefix.length + (space ? space.length : 0)
