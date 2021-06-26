@@ -93,7 +93,10 @@ const parse = (unparsed: string): Parsed => {
         }
 
         if(typeof errorAt === 'number') {
-            error = e.message.replace('Unexpected token ', `Unexpected token "${unparsed[errorAt]}" `);
+            error = unparsed[errorAt] !== undefined
+                ? e.message.replace('Unexpected token ', `Unexpected token "${unparsed[errorAt]}" `)
+                : e.message;
+
             chars[errorAt] = {
                 color: 'error'
             };
