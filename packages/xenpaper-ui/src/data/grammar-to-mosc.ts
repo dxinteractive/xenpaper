@@ -89,7 +89,7 @@ export const pitchToRatio = (pitch: PitchType, scale: number[], octaveSize: numb
 
     if(type === 'PitchDegree') {
         const {degree} = pitch.value as PitchDegreeType;
-        return scaleRatio(degree, scale, octaveSize) * octaveMulti;
+        return pitchDegreeToRatio(degree, scale, octaveSize) * octaveMulti;
     }
 
     throw new Error(`Unknown pitch type "${type}"`);
@@ -103,13 +103,8 @@ const edoToRatios = (edoSize: number, octaveSize: number): number[] => {
     return ratios;
 };
 
-const scaleRatio = (degree: number, scale: number[], octaveSize: number): number => {
+const pitchDegreeWrap = (degree: number, scale: number[]): [number, number] => {
     limit('Scale degree', degree, -1000, 1000);
-    limit('Octave size', octaveSize, -20, 20);
-
-    if(scale.length === 0) {
-        return 1;
-    }
 
     const steps = scale.length;
     let octave = 0;
@@ -123,9 +118,19 @@ const scaleRatio = (degree: number, scale: number[], octaveSize: number): number
         octave--;
     }
 
-    return scale[degree] * Math.pow(octaveSize, octave);
+    return [degree, octave];
 };
 
+const pitchDegreeToRatio = (degree: number, scale: number[], octaveSize: number): number => {
+    limit('Octave size', octaveSize, -20, 20);
+
+    if(scale.length === 0) {
+        return 1;
+    }
+
+    const [wrappedDegree, octave] = pitchDegreeWrap(degree, scale);
+    return scale[wrappedDegree] * Math.pow(octaveSize, octave);
+};
 
 const pitchToHz = (pitch: PitchType, context: Context): number => {
     if(pitch.value.type === 'PitchHz') {
@@ -154,6 +159,52 @@ const tailToTime = (tail: TailType|undefined, context: Context): {time: number, 
 };
 
 //
+// labels
+//
+
+export const pitchToLabel = (pitch: PitchType, context: Context): string => {
+    const {type} = pitch.value;
+
+    if(type === 'PitchRatio') {
+        const {numerator, denominator} = pitch.value as PitchRatioType;
+        const ratio = numerator / denominator;
+        limit('Pitch ratio', ratio, 0, 100);
+        return `${numerator}/${denominator}`;
+    }
+
+    if(type === 'PitchCents') {
+        const {cents} = pitch.value as PitchCentsType;
+        return `${cents}c`;
+    }
+
+    if(type === 'PitchOctaveDivision') {
+        const {numerator, denominator} = pitch.value as PitchOctaveDivisionType;
+        return `${numerator}\\${denominator}`;
+    }
+
+    if(type === 'PitchDegree') {
+        const {degree} = pitch.value as PitchDegreeType;
+        const [wrappedDegree] = pitchDegreeWrap(degree, context.scale);
+        return context.scaleLabels[wrappedDegree];
+    }
+
+    if(type === 'PitchHz') {
+        const {hz} = pitch.value as PitchHzType;
+        return `${hz}Hz`;
+    }
+
+    throw new Error(`Unknown pitch type "${type}"`);
+};
+
+const edoToLabels = (edoSize: number): string[] => {
+    const labels: string[] = [];
+    for(let i = 0; i < edoSize; i++) {
+        labels.push(`${i}\\${edoSize}`);
+    }
+    return labels;
+};
+
+//
 // converters
 //
 
@@ -164,6 +215,7 @@ type Context = {
     time: number;
     subdivision: number;
     scale: number[];
+    scaleLabels: string[];
     octaveSize: number;
 };
 
@@ -180,6 +232,7 @@ const processNote = (note: NoteType, context: Context): MoscNote[] => {
     return [{
         type: 'NOTE_TIME',
         hz: pitchToHz(note.pitch, context),
+        label: pitchToLabel(note.pitch, context),
         ...timeProps
     }];
 };
@@ -199,6 +252,7 @@ const processChord = (chord: ChordType|RatioChordType, context: Context): MoscNo
             return {
                 type: 'NOTE_TIME',
                 hz: pitchToHz(pitch as PitchType, context),
+                label: pitchToLabel(pitch as PitchType, context),
                 ...timeProps
             };
         });
@@ -210,10 +264,12 @@ const processChord = (chord: ChordType|RatioChordType, context: Context): MoscNo
     const ratioPitchTypes: MoscNote[] = pitches
         .filter((pitch): pitch is RatioChordPitchType => pitch.type === 'RatioChordPitch')
         .map((pitch: any) => {
-            const ratio = (pitch as RatioChordPitchType).pitch / (firstRatioPitch as RatioChordPitchType).pitch;
+            const numerator = (pitch as RatioChordPitchType).pitch;
+            const denominator = (firstRatioPitch as RatioChordPitchType).pitch;
             return {
                 type: 'NOTE_TIME',
-                hz: ratio * context.rootHz,
+                hz: numerator / denominator * context.rootHz,
+                label: `${numerator}/${denominator}`,
                 ...timeProps
             };
         });
@@ -258,9 +314,11 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
         }
 
         context.scale = filteredPitches.map(pitch => pitchToRatio(pitch, context.scale, context.octaveSize));
+        context.scaleLabels = filteredPitches.map(pitch => pitchToLabel(pitch, context));
 
         if(scaleOctaveMarker) {
             context.octaveSize = context.scale.pop() || 2;
+            context.scaleLabels.pop();
         }
 
         return;
@@ -269,6 +327,7 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
     if(type === 'EdoScale') {
         const {divisions, octaveSize} = scale as EdoScaleType;
         context.scale = edoToRatios(divisions, octaveSize);
+        context.scaleLabels = edoToLabels(divisions);
         context.octaveSize = octaveSize;
         return;
     }
@@ -281,9 +340,11 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
             .map(pitch => pitch.pitch);
 
         context.scale = ratios.map(ratio => ratio / ratios[0]);
+        context.scaleLabels = ratios.map(ratio => `${ratio}/${ratios[0]}`);
 
         if(scaleOctaveMarker) {
             context.octaveSize = context.scale.pop() || 2;
+            context.scaleLabels.pop();
         }
 
         return;
@@ -391,6 +452,7 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
         time: 0,
         subdivision: 0.5,
         scale: edoToRatios(12, 2),
+        scaleLabels: edoToLabels(12),
         octaveSize: 2
     };
 

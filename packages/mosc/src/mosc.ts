@@ -7,6 +7,7 @@ export type MoscNote = {
     time: number;
     timeEnd: number;
     hz: number;
+    label: string;
 };
 
 export type MoscNoteMs = {
@@ -14,6 +15,7 @@ export type MoscNoteMs = {
     ms: number;
     msEnd: number;
     hz: number;
+    label: string;
 };
 
 export type MoscParam = {
@@ -158,6 +160,7 @@ export const scoreToMs = (score: MoscScore): MoscScoreMs => {
                 return {
                     type: 'NOTE_MS',
                     hz: note.hz,
+                    label: note.label,
                     ms: thisTimeToMs(note.time),
                     msEnd: thisTimeToMs(note.timeEnd)
                 };
