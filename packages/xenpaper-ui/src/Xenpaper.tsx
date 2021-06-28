@@ -6,8 +6,10 @@ import {ErrorMessage} from './component/ErrorMessage';
 import {LoaderPane} from './component/LoaderPane';
 import {Char} from './component/Char';
 import {Box, Flex} from './layout/Layout';
-import {Sidebars, Footer} from './Sidebars';
+import {Sidebar, SidebarInfo, SidebarShare, Footer} from './Sidebars';
 import styled from 'styled-components';
+
+import {PitchRuler, useRulerState} from './PitchRuler';
 
 import {XenpaperGrammarParser} from './data/grammar';
 import type {XenpaperAST} from './data/grammar';
@@ -56,7 +58,6 @@ const parse = (unparsed: string): Parsed => {
 
         if(score) {
             const scoreMs = scoreToMs(score);
-
             soundEngine.setScore(scoreMs);
         }
 
@@ -182,7 +183,7 @@ export function Xenpaper(): React.ReactElement {
 // application component
 //
 
-export type SidebarState = 'info'|'share'|'none';
+export type SidebarState = 'info'|'share'|'ruler'|'none';
 
 // type RealtimeState = {
 //     on: boolean;
@@ -280,7 +281,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
     const playing = useDendriform<boolean>(false);
 
     useEffect(() => {
-        return soundEngine.on('end', () => {
+        return soundEngine.onEnd(() => {
             playing.set(false);
         });
     }, []);
@@ -332,6 +333,18 @@ export function XenpaperApp(props: Props): React.ReactElement {
     }, []);
 
     //
+    // ruler state
+    //
+
+    const rulerState = useRulerState();
+
+    useEffect(() => {
+        return soundEngine.onNote((note) => {
+            rulerState.add(note);
+        });
+    }, []);
+
+    //
     // sidebar state
     //
 
@@ -343,6 +356,10 @@ export function XenpaperApp(props: Props): React.ReactElement {
 
     const toggleSidebarShare = useCallback(() => {
         setSidebar(s => s !== 'share' ? 'share' : 'none');
+    }, []);
+
+    const toggleSidebarRuler = useCallback(() => {
+        setSidebar(s => s !== 'ruler' ? 'ruler' : 'none');
     }, []);
 
     const onSetTune = useCallback(async (tune: string): Promise<void> => {
@@ -401,14 +418,26 @@ export function XenpaperApp(props: Props): React.ReactElement {
     const sidebarToggles = <>
         <SideButton onClick={toggleSidebarInfo}>Info</SideButton>
         <SideButton onClick={toggleSidebarShare}>Share</SideButton>
+        <SideButton onClick={toggleSidebarRuler}>Ruler</SideButton>
     </>;
 
-    const sidebar = <Sidebars
-        sidebar={sidebarState}
-        onSetTune={onSetTune}
-        setSidebar={setSidebar}
-        tuneForm={tuneForm}
-    />;
+    const sidebar = <>
+        {sidebarState === 'info' &&
+            <SidebarInfo onSetTune={onSetTune} setSidebar={setSidebar} />
+        }
+        {sidebarState === 'share' && tuneForm.render(form => {
+            const url = form.branch('url').useValue();
+            const urlEmbed = form.branch('urlEmbed').useValue();
+            return <SidebarShare setSidebar={setSidebar} url={url} urlEmbed={urlEmbed} />;
+        })}
+        {sidebarState === 'ruler' && parsedForm.branch('parsed').render(form => {
+            const parsed = form.useValue();
+            // how to get scale info? what about root?
+            return <Sidebar setSidebar={setSidebar} title="Pitch ruler">
+                <PitchRuler rulerState={rulerState} />
+            </Sidebar>;
+        })}
+    </>;
 
     const code = <CodePanel tuneForm={tuneForm} parsedForm={parsedForm} />;
 

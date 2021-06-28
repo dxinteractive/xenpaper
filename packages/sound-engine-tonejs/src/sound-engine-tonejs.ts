@@ -130,6 +130,7 @@ export class SoundEngineTonejs extends SoundEngine {
                         (noteMs.msEnd * 0.001) - (noteMs.ms * 0.001),
                         time + 0.01 // schedule in the future slightly to avoid double note playing at end
                     );
+                    this._triggerEvent('note', noteMs);
                 }, noteMs.ms * 0.001);
             }
             if(item.type === 'PARAM_MS') {
@@ -172,10 +173,7 @@ export class SoundEngineTonejs extends SoundEngine {
 
                     Tone.Transport.stop();
                     this.gotoMs(0);
-                    this.events.forEach((type, cb) => {
-                        if(type !== 'end') return;
-                        cb();
-                    });
+                    this._triggerEvent('end', undefined);
                 }, this._endMs * 0.001);
             }
             // @ts-ignore

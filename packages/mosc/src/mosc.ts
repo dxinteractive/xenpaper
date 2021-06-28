@@ -194,14 +194,13 @@ export const scoreToMs = (score: MoscScore): MoscScoreMs => {
 // soud engine base class
 //
 
-type SoundEngineEvent = 'end';
-type SoundEngineEventCallback = () => void;
+type SoundEngineEndEventCallback = () => void;
+type SoundEngineNoteEventCallback = (noteMs: MoscNoteMs) => void;
 type SoundEngineEventCallbackCancel = () => void;
 
 export class SoundEngine {
 
     scoreMs?: MoscScoreMs;
-    events = new Map<SoundEngineEventCallback, SoundEngineEvent>();
 
     playing(): boolean {
         return false;
@@ -233,10 +232,29 @@ export class SoundEngine {
 
     async setScore(scoreMs: MoscScoreMs): Promise<void> {}
 
-    on(eventType: SoundEngineEvent, callback: SoundEngineEventCallback): SoundEngineEventCallbackCancel {
-        this.events.set(callback, eventType);
+    // events
+
+    events = {
+        end: new Set<SoundEngineEndEventCallback>(),
+        note: new Set<SoundEngineNoteEventCallback>()
+    };
+
+    _triggerEvent(type: string, params: any) {
+        // @ts-ignore
+        this.events[type].forEach(cb => cb(params));
+    }
+
+    onEnd(callback: SoundEngineEndEventCallback): SoundEngineEventCallbackCancel {
+        this.events.end.add(callback);
         return () => {
-            this.events.delete(callback);
+            this.events.end.delete(callback);
+        };
+    }
+
+    onNote(callback: SoundEngineNoteEventCallback): SoundEngineEventCallbackCancel {
+        this.events.note.add(callback);
+        return () => {
+            this.events.note.delete(callback);
         };
     }
 }
