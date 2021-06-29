@@ -115,8 +115,7 @@ const parse = (unparsed: string): Parsed => {
 type CharProps = {
     className: string;
     color?: HighlightColor;
-    children: React.ReactNode;
-    noteId?: number;
+    children: string;
 };
 
 const createCharElements = (
@@ -127,9 +126,7 @@ const createCharElements = (
     layoutModeNotes: number[]
 ): CharProps[] => {
 
-    const hashChars: string[] = hash.split('');
-
-    return hashChars.map((chr, index) => {
+    return hash.split('').map((chr, index) => {
         const ch: CharData|undefined = chars?.[index];
         const [start, end] = ch?.playTime ?? [];
 
@@ -149,8 +146,7 @@ const createCharElements = (
         return {
             className: active ? 'active' : '',
             color: ch?.color,
-            children: chr,
-            noteId: start
+            children: chr
         };
     });
 };
@@ -161,7 +157,7 @@ const createCharElements = (
 
 const PLAY_PATHS = {
     paused: ['M 0 0 L 12 6 L 0 12 Z'],
-    playing: ['M 0 0 L 4 0 L 4 12 L 0 12 Z', 'M 8 0 L 12 0 L 12 12 L 8 12 Z'],
+    playing: ['M 0 0 L 4 0 L 4 12 L 0 12 Z', 'M 8 0 L 12 0 L 12 12 L 8 12 Z']
     // stopped: ['M 0 0 L 12 0 L 12 12 L 0 12 Z'],
 };
 
@@ -279,6 +275,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
     //
 
     const playing = useDendriform<boolean>(false);
+    const playFromLine = useDendriform<number>(0);
 
     useEffect(() => {
         return soundEngine.onEnd(() => {
@@ -294,6 +291,24 @@ export function XenpaperApp(props: Props): React.ReactElement {
 
     const handleSetPlayback = useCallback((play: boolean) => {
         if(parsedForm.value.error) return;
+
+        // work out start ms time from newline chars vs time values from the parsed form
+        // should bail once found but eh, this only happens upon clicking play
+        let ms = 0;
+        const msAtLine: number[] = [0];
+        tuneForm.value.tune.split('').forEach((chr, index) => {
+            const ch: CharData|undefined = parsedForm.value.chars?.[index];
+            const [,end] = ch?.playTime ?? [];
+            if(end !== undefined) {
+                ms = end;
+            }
+            if(chr === '\n') {
+                msAtLine.push(ms);
+            }
+        });
+        const playFromMs = msAtLine[playFromLine.value] ?? 0;
+        soundEngine.gotoMs(playFromMs);
+
         playing.set(play);
         play ? soundEngine.play() : soundEngine.pause();
     }, []);
@@ -439,7 +454,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
         })}
     </>;
 
-    const code = <CodePanel tuneForm={tuneForm} parsedForm={parsedForm} />;
+    const code = <CodePanel tuneForm={tuneForm} parsedForm={parsedForm} playFromLine={playFromLine} />;
 
     const htmlTitle = <SetHtmlTitle tuneForm={tuneForm} />;
 
@@ -580,6 +595,7 @@ function EmbedLayout(props: EmbedLayoutProps): React.ReactElement {
 type CodePanelProps = {
     tuneForm: Dendriform<TuneForm>;
     parsedForm: Dendriform<Parsed>;
+    playFromLine: Dendriform<number>;
 };
 
 function CodePanel(props: CodePanelProps): React.ReactElement {
@@ -599,7 +615,7 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
         const layoutModeNotes: number[] = []; // layoutMode.branch('activeNotes').useValue();
 
         // use value with a 200ms debounce for perf reasons
-        // this debounce does cause the code vlue to progress forwad
+        // this debounce does cause the code value to progress forward
         // without the calculated syntax highlighting
         // so colours will be momentarily skew-whiff
         // but thats better than parsing the xenpaper AST at every keystroke
@@ -614,25 +630,27 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
             layoutModeNotes
         );
 
-        const charElements = charElementProps.map(({...props}, index) => { // noteId,
-            if(!layoutModeOn) {
-                return <Char key={index} {...props} />;
+        const hasPlayStartButtons = charElementProps.some(props => props.children === '\n');
+        let playStartLine = 0;
+
+        const charElements: React.ReactNode[] = [];
+
+        const createPlayStart = () => {
+            charElements.push(<PlayStart
+                key={`playstart${playStartLine}`}
+                line={playStartLine++}
+                playFromLine={props.playFromLine}/>
+            );
+        };
+
+        if(hasPlayStartButtons) {
+            createPlayStart();
+        }
+        charElementProps.forEach((props, index) => {
+            charElements.push(<Char key={index} {...props} />);
+            if(props.children === '\n') {
+                createPlayStart();
             }
-
-            /*const onPress = () => {
-                if(noteId !== undefined) {
-                    layoutMode.branch('activeNotes').set(draft => {
-                        draft.push(noteId);
-                    });
-                }
-            };
-
-            return <Char
-                key={index}
-                {...props}
-                onMouseDown={onPress}
-            />;*/
-            return null;
         });
 
         // stop event propagation here so we can detect clicks outside of this element in isolation
@@ -685,21 +703,6 @@ const Toolbar = styled(Box)`
 
 const Hr = styled(Box)`
      border-top: 1px ${props => props.theme.colors.background.light} solid;
-`;
-
-const Flink = styled.a`
-    color: ${props => props.theme.colors.highlights.unknown};
-    text-decoration: none;
-    font-style: normal;
-
-    &:hover, &:focus {
-        color: #fff;
-        text-decoration: underline;
-    }
-
-    &:active {
-        color: #fff;
-    }
 `;
 
 type SideButtonProps = {
@@ -774,5 +777,31 @@ const EditOnXenpaperButton = styled.a<EditOnXenpaperButtonProps>`
 
     @media all and (min-width: ${props => props.theme.widths.sm}) {
         font-size: ${props => props.multiline ? '0.9rem' : '1.1rem'};
+    }
+`;
+
+type PlayStartProps = {
+    line: number;
+    playFromLine: Dendriform<number>;
+};
+
+const PlayStart = styled(({line, playFromLine, ...props}: PlayStartProps) => {
+    const onClick = () => playFromLine.set(line);
+    return <span {...props} onClick={onClick}>{'>'}</span>;
+})`
+    position: absolute;
+    left: .8rem;
+    border: none;
+    display: block;
+    cursor: pointer;
+    color: ${props => props.theme.colors.text.placeholder};
+    outline: none;
+    opacity: ${props => props.playFromLine.useValue() === props.line ? '1' : '.2'};
+    pointer-events: auto;
+
+    transition: opacity .2s ease-out;
+
+    &:hover, &:focus, &:active {
+        opacity: 1;
     }
 `;

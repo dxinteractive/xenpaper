@@ -113,7 +113,7 @@ const Textarea = styled.textarea`
     overflow: hidden;
     -webkit-text-fill-color: transparent;
     -webkit-font-smoothing: antialiased;
-    padding: 1rem;
+    padding: 1rem 1rem 1rem 2rem;
     outline: 0;
 
     &::selection {
@@ -152,6 +152,6 @@ const Highlight = styled.pre<HighlightProps>`
     overflow-wrap: break-word;
     position: relative;
     pointer-events: ${props => props.freeze ? 'auto' : 'none'};
-    padding: 1rem;
+    padding: 1rem 1rem 1rem 2rem;
     user-select: none;
 `;
