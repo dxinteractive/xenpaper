@@ -9,7 +9,7 @@ import {Box, Flex} from './layout/Layout';
 import {Sidebar, SidebarInfo, SidebarShare, Footer} from './Sidebars';
 import styled from 'styled-components';
 
-import {PitchRuler, useRulerState} from './PitchRuler';
+import {PitchRuler, initialRulerState} from './PitchRuler';
 
 import {XenpaperGrammarParser} from './data/grammar';
 import type {XenpaperAST} from './data/grammar';
@@ -24,8 +24,9 @@ import {useWindowLoaded} from './hooks/useWindowLoaded';
 import {useAnimationFrame} from './hooks/useAnimationFrame';
 import {useDendriform, useInput} from 'dendriform';
 import type {Dendriform} from 'dendriform';
-import {setAutoFreeze} from 'immer';
+import {setAutoFreeze, enableMapSet} from 'immer';
 setAutoFreeze(false); // sadly I am relying on mutations within the xenpaper AST because who cares
+enableMapSet();
 
 import {scoreToMs} from '@xenpaper/mosc';
 import type {SoundEngine} from '@xenpaper/mosc';
@@ -112,6 +113,30 @@ const parse = (unparsed: string): Parsed => {
     }
 };
 
+const getMsAtLine = (tune: string, chars: CharData[]|undefined, line: number): number => {
+    if(line === 0) {
+        return 0;
+    }
+    let ms = 0;
+    let counted = 0;
+    const tuneSplit = tune.split('');
+    for(let i = 0; i < tuneSplit.length; i++) {
+        const chr = tuneSplit[i];
+        const ch = chars?.[i];
+        const [,end] = ch?.playTime ?? [];
+        if(end !== undefined) {
+            ms = end;
+        }
+        if(chr === '\n') {
+            counted++;
+            if(counted === line) {
+                return ms;
+            }
+        }
+    }
+    return 0;
+};
+
 type CharProps = {
     className: string;
     color?: HighlightColor;
@@ -119,14 +144,14 @@ type CharProps = {
 };
 
 const createCharElements = (
-    hash: string,
+    tune: string,
     chars: CharData[]|undefined,
     time: number,
     layoutModeOn: boolean,
     layoutModeNotes: number[]
 ): CharProps[] => {
 
-    return hash.split('').map((chr, index) => {
+    return tune.split('').map((chr, index) => {
         const ch: CharData|undefined = chars?.[index];
         const [start, end] = ch?.playTime ?? [];
 
@@ -275,7 +300,10 @@ export function XenpaperApp(props: Props): React.ReactElement {
     //
 
     const playing = useDendriform<boolean>(false);
-    const playFromLine = useDendriform<number>(0);
+    const selectedLine = useDendriform<number>(0);
+    selectedLine.useChange(line => {
+        soundEngine.setLoopStart(getMsAtLine(tuneForm.value.tune, parsedForm.value.chars, line));
+    });
 
     useEffect(() => {
         return soundEngine.onEnd(() => {
@@ -292,22 +320,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
     const handleSetPlayback = useCallback((play: boolean) => {
         if(parsedForm.value.error) return;
 
-        // work out start ms time from newline chars vs time values from the parsed form
-        // should bail once found but eh, this only happens upon clicking play
-        let ms = 0;
-        const msAtLine: number[] = [0];
-        tuneForm.value.tune.split('').forEach((chr, index) => {
-            const ch: CharData|undefined = parsedForm.value.chars?.[index];
-            const [,end] = ch?.playTime ?? [];
-            if(end !== undefined) {
-                ms = end;
-            }
-            if(chr === '\n') {
-                msAtLine.push(ms);
-            }
-        });
-        const playFromMs = msAtLine[playFromLine.value] ?? 0;
-        soundEngine.gotoMs(playFromMs);
+        soundEngine.gotoMs(getMsAtLine(tuneForm.value.tune, parsedForm.value.chars, selectedLine.value));
 
         playing.set(play);
         play ? soundEngine.play() : soundEngine.pause();
@@ -320,7 +333,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
     const handleToggleLoop = useCallback(() => {
         const newValue = !looping.value;
         looping.set(newValue);
-        soundEngine.setLoop(newValue);
+        soundEngine.setLoopActive(newValue);
     }, []);
 
     //
@@ -351,11 +364,16 @@ export function XenpaperApp(props: Props): React.ReactElement {
     // ruler state
     //
 
-    const rulerState = useRulerState();
+    const rulerState = useDendriform(initialRulerState);
 
     useEffect(() => {
-        return soundEngine.onNote((note) => {
-            rulerState.add(note);
+        return soundEngine.onNote((note, on) => {
+            const id = `${note.ms}-${note.hz}`;
+            rulerState.branch('notes').set(draft => {
+                on
+                    ? draft.set(id, note)
+                    : draft.delete(id);
+            });
         });
     }, []);
 
@@ -445,16 +463,14 @@ export function XenpaperApp(props: Props): React.ReactElement {
             const urlEmbed = form.branch('urlEmbed').useValue();
             return <SidebarShare setSidebar={setSidebar} url={url} urlEmbed={urlEmbed} />;
         })}
-        {sidebarState === 'ruler' && parsedForm.branch('parsed').render(form => {
-            const parsed = form.useValue();
-            // how to get scale info? what about root?
-            return <Sidebar setSidebar={setSidebar} title="Pitch ruler">
+        {sidebarState === 'ruler' &&
+            <Sidebar setSidebar={setSidebar} title="Pitch ruler">
                 <PitchRuler rulerState={rulerState} />
-            </Sidebar>;
-        })}
+            </Sidebar>
+        }
     </>;
 
-    const code = <CodePanel tuneForm={tuneForm} parsedForm={parsedForm} playFromLine={playFromLine} />;
+    const code = <CodePanel tuneForm={tuneForm} parsedForm={parsedForm} selectedLine={selectedLine} />;
 
     const htmlTitle = <SetHtmlTitle tuneForm={tuneForm} />;
 
@@ -595,7 +611,7 @@ function EmbedLayout(props: EmbedLayoutProps): React.ReactElement {
 type CodePanelProps = {
     tuneForm: Dendriform<TuneForm>;
     parsedForm: Dendriform<Parsed>;
-    playFromLine: Dendriform<number>;
+    selectedLine: Dendriform<number>;
 };
 
 function CodePanel(props: CodePanelProps): React.ReactElement {
@@ -639,7 +655,7 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
             charElements.push(<PlayStart
                 key={`playstart${playStartLine}`}
                 line={playStartLine++}
-                playFromLine={props.playFromLine}/>
+                selectedLine={props.selectedLine}/>
             );
         };
 
@@ -782,11 +798,11 @@ const EditOnXenpaperButton = styled.a<EditOnXenpaperButtonProps>`
 
 type PlayStartProps = {
     line: number;
-    playFromLine: Dendriform<number>;
+    selectedLine: Dendriform<number>;
 };
 
-const PlayStart = styled(({line, playFromLine, ...props}: PlayStartProps) => {
-    const onClick = () => playFromLine.set(line);
+const PlayStart = styled(({line, selectedLine, ...props}: PlayStartProps) => {
+    const onClick = () => selectedLine.set(line);
     return <span {...props} onClick={onClick}>{'>'}</span>;
 })`
     position: absolute;
@@ -796,7 +812,7 @@ const PlayStart = styled(({line, playFromLine, ...props}: PlayStartProps) => {
     cursor: pointer;
     color: ${props => props.theme.colors.text.placeholder};
     outline: none;
-    opacity: ${props => props.playFromLine.useValue() === props.line ? '1' : '.2'};
+    opacity: ${props => props.selectedLine.useValue() === props.line ? '1' : '.2'};
     pointer-events: auto;
 
     transition: opacity .2s ease-out;

@@ -1,22 +1,46 @@
-import React, {useState} from 'react';
+import React from 'react';
+import useDimensions from 'react-use-dimensions';
+import * as ReactKonva from 'react-konva';
+import {useStrictMode} from 'react-konva';
+import type {Dendriform} from 'dendriform';
 import type {MoscNoteMs} from '@xenpaper/mosc';
 
-export class RulerState {
-    add(note: MoscNoteMs): void {
-        console.log('add', note);
-    }
-}
+useStrictMode(true);
+const {Stage, Layer, Rect, Text} = ReactKonva as any;
 
-export const useRulerState = (): RulerState => {
-    const [rulerState] = useState<RulerState>(() => new RulerState());
-    return rulerState;
+export type RulerState = {
+    notes: Map<string,MoscNoteMs>;
 };
 
+export const initialRulerState = (): RulerState => ({
+    notes: new Map()
+});
+
 type Props = {
-    rulerState: RulerState;
+    rulerState: Dendriform<RulerState>;
 };
 
 export function PitchRuler(props: Props): React.ReactElement|null {
-    console.log('props', props);
-    return null;
+    const [dimensionsRef, {width = 0, height = 0}] = useDimensions();
+
+    const rulerState = props.rulerState.useValue();
+    console.log('rulerState', rulerState.notes);
+
+    return <div ref={dimensionsRef} style={{height: '100%', width: '100%'}}>
+        <Stage width={width} height={height}>
+            <Layer>
+                <Text text="Hi!" />
+                {Array.from(rulerState.notes.entries()).map(([id, note]) => {
+                    return <Rect
+                        key={id}
+                        x={20}
+                        y={note.hz}
+                        width={100}
+                        height={1}
+                        fill="#FFFFFF"
+                    />;
+                })}
+            </Layer>
+        </Stage>
+    </div>;
 }

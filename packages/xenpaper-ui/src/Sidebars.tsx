@@ -44,7 +44,7 @@ type SidebarInfoProps = {
 
 export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
     const {onSetTune, setSidebar} = props;
-    return <Sidebar setSidebar={setSidebar}>
+    return <Sidebar setSidebar={setSidebar} pad>
         <H>How it works</H>
         <B>Create tunes by typing in the text area. Press play to hear what you{"'"}ve written, or press <C>Ctrl / Cmd + Enter</C>.</B>
         <Box pt={4}><H>Notes</H></Box>
@@ -156,7 +156,7 @@ export const SidebarShare = (props: SidebarShareProps): React.ReactElement => {
     const [copiedLink, setCopiedLink] = useState<boolean>(false);
     const [copiedIframe, setCopiedIframe] = useState<boolean>(false);
 
-    return <Sidebar setSidebar={setSidebar}>
+    return <Sidebar setSidebar={setSidebar} pad>
         <Box>
             <H>Share link</H>
             <Flex>
@@ -202,11 +202,12 @@ type SidebarProps = {
     setSidebar: (open: SidebarState) => void;
     children: React.ReactNode;
     title?: string;
+    pad?: boolean;
 };
 
 export const Sidebar = (props: SidebarProps): React.ReactElement => {
-    const {setSidebar, children, title} = props;
-    return <TextPanel maxWidth={['100rem', '20rem', '30rem', '30rem', '40rem']} flexShrink="0" minHeight="0">
+    const {setSidebar, children, title, pad} = props;
+    return <TextPanel width={['100rem', '20rem', '30rem', '40%']} flexDirection="column" flexShrink="0" minHeight="0">
         <Box position={["absolute", "fixed"]} top={0} right={0} pt={3} pr={3}>
             <IconToggle
                 state="cross"
@@ -235,13 +236,13 @@ export const Sidebar = (props: SidebarProps): React.ReactElement => {
                 </Flex>
             }
         </LogoArea>
-        <Box p={4}>
+        <Box p={pad ? 4 : 0} flexGrow="1">
             {children}
         </Box>
     </TextPanel>;
 };
 
-const TextPanel = styled(Box)`
+const TextPanel = styled(Flex)`
     background-color: ${props => props.theme.colors.background.light};
     font-family: ${props => props.theme.fonts.copy};
     position: relative;

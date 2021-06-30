@@ -99,17 +99,21 @@ export class SoundEngineTonejs extends SoundEngine {
         Tone.Transport.seconds = ms * 0.001;
     }
 
-    async setLoop(loop: boolean, startMs: number = 0, endMs: number = 0): Promise<void> {
-        Tone.Transport.loop = loop;
-        await this.setLoopStart(startMs);
-        await this.setLoopEnd(endMs);
+    setLoop(loop: boolean, startMs: number = 0, endMs: number = 0): void {
+        this.setLoopActive(loop);
+        this.setLoopStart(startMs);
+        this.setLoopEnd(endMs);
     }
 
-    async setLoopStart(ms: number = 0): Promise<void> {
+    setLoopActive(loop: boolean = true): void {
+        Tone.Transport.loop = loop;
+    }
+
+    setLoopStart(ms: number = 0): void {
         Tone.Transport.loopStart = ms * 0.001;
     }
 
-    async setLoopEnd(ms: number = 0): Promise<void> {
+    setLoopEnd(ms: number = 0): void {
         this._loopEndMs = ms;
         Tone.Transport.loopEnd = (ms === 0 ? this._endMs : ms) * 0.001;
     }
@@ -121,21 +125,28 @@ export class SoundEngineTonejs extends SoundEngine {
         Tone.Transport.cancel();
 
         // add all new notes to tone transport
-        this.scoreMs.sequence.map((item: MoscItemMs): number => {
+        this.scoreMs.sequence.forEach((item: MoscItemMs): void => {
             if(item.type === 'NOTE_MS') {
                 const noteMs = item as MoscNoteMs;
-                return Tone.Transport.schedule((time: number) => {
+                Tone.Transport.schedule((time: number) => {
                     this.synth.triggerAttackRelease(
                         noteMs.hz,
                         (noteMs.msEnd * 0.001) - (noteMs.ms * 0.001),
                         time + 0.01 // schedule in the future slightly to avoid double note playing at end
                     );
-                    this._triggerEvent('note', noteMs);
+                    this._triggerEvent('note', noteMs, true);
                 }, noteMs.ms * 0.001);
+
+                Tone.Transport.schedule((time: number) => {
+                    this._triggerEvent('note', noteMs, false);
+                }, noteMs.msEnd * 0.001);
+
+                return;
             }
+
             if(item.type === 'PARAM_MS') {
                 const paramMs = item as MoscParamMs;
-                return Tone.Transport.schedule(() => {
+                Tone.Transport.schedule(() => {
                     // this is inaccurate
                     // as tonejs calls these callbacks several ms ahead of schedule
                     // and relies on scheduled events to pass the provided time
@@ -161,21 +172,27 @@ export class SoundEngineTonejs extends SoundEngine {
                     }
 
                 }, paramMs.ms * 0.001);
+
+                return;
             }
+
             if(item.type === 'END_MS') {
                 this._endMs = (item as MoscEndMs).ms;
                 if(this._loopEndMs === 0) {
                     this.setLoopEnd(0);
                 }
 
-                return Tone.Transport.schedule(async () => {
+                Tone.Transport.schedule(async () => {
                     if(Tone.Transport.loop) return;
 
                     Tone.Transport.stop();
                     this.gotoMs(0);
                     this._triggerEvent('end', undefined);
                 }, this._endMs * 0.001);
+
+                return;
             }
+
             // @ts-ignore
             throw new Error(`Unexpected item type ${item.type} encountered`);
         });
