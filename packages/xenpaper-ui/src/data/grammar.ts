@@ -588,11 +588,42 @@ export const SetEnv = node/*<SetEnvType>*/(
     })
 );
 
+// ruler
+
+export type SetRulerRangeType = NodeType & {
+    low: PitchType;
+    high: PitchType;
+};
+
+export const SetRulerRange = node/*<SetRulerRangeType>*/(
+    'SetRulerRange',
+    All(/^(rl:)/, Pitch, ',', Pitch),
+    ([prefix, low, high]: [string, PitchType, PitchType]) => ({
+        low,
+        high,
+        len: prefix.length + 1 + low.len + high.len
+    })
+);
+
+export type SetRulerGridType = NodeType;
+
+export const SetRulerGrid = node/*<SetRulerGridType>*/(
+    'SetRulerGrid',
+    /^(rl:grid)/,
+    ([str]: [string]) => ({
+        len: str.length
+    })
+);
+
+export type SetRulerType = SetRulerRangeType|SetRulerGridType;
+
+export const SetRuler = Any(SetRulerRange,SetRulerGrid);
+
 // setters
 
-export type SetterType = SetBpmType|SetBmsType|SetSubdivisionType|SetOscType|SetEnvType;
+export type SetterType = SetBpmType|SetBmsType|SetSubdivisionType|SetOscType|SetEnvType|SetRulerType;
 
-export const Setter = Any(SetBpm, SetBms, SetSubdivision, SetOsc, SetEnv);
+export const Setter = Any(SetBpm, SetBms, SetSubdivision, SetOsc, SetEnv, SetRuler);
 
 export type SetterGroupType = NodeType & {
     setters: SetterType[];

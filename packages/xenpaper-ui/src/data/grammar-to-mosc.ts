@@ -411,6 +411,23 @@ const processSetter = (setter: SetterType, context: Context): MoscItem[] => {
         }];
     }
 
+    if(type === 'SetRulerGrid') {
+        // send some kind of external intstruction, in MoscScore but not used by moscscore
+        // so that parsing can all be done here
+        // snapshot
+        // context.scale
+        // context.scaleLabels
+        return [];
+    }
+
+    if(type === 'SetRulerRange') {
+        // send some kind of external intstruction, in MoscScore but not used by moscscore
+        // so that parsing can all be done here
+        // parse
+        // high and low notes to hz
+        return [];
+    }
+
     throw new Error(`Unknown setters type "${type}"`);
 };
 

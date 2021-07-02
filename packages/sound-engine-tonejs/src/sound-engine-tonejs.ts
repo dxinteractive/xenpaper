@@ -47,6 +47,7 @@ export class SoundEngineTonejs extends SoundEngine {
     _started = false;
     _endMs = 0;
     _loopEndMs = 0;
+    _activeNoteEvents = new Set<MoscItemMs>();
 
     synth = new Tone.PolySynth(Tone.Synth, {
         oscillator: {
@@ -81,6 +82,17 @@ export class SoundEngineTonejs extends SoundEngine {
         if(!this._started) {
             await Tone.start();
             this._started = true;
+
+            const onEnd = () => {
+                this.synth.releaseAll();
+                this._activeNoteEvents.forEach(noteMs => {
+                    this._triggerEvent('note', noteMs, false);
+                });
+                this._activeNoteEvents.clear();
+            };
+
+            Tone.Transport.on('stop', onEnd);
+            Tone.Transport.on('loop', onEnd);
         }
     }
 
@@ -92,7 +104,6 @@ export class SoundEngineTonejs extends SoundEngine {
     async pause(): Promise<void> {
         await this.start();
         Tone.Transport.stop();
-        this.synth.releaseAll();
     }
 
     async gotoMs(ms: number): Promise<void> {
@@ -132,14 +143,16 @@ export class SoundEngineTonejs extends SoundEngine {
                     this.synth.triggerAttackRelease(
                         noteMs.hz,
                         (noteMs.msEnd * 0.001) - (noteMs.ms * 0.001),
-                        time + 0.01 // schedule in the future slightly to avoid double note playing at end
+                        time
                     );
+                    this._activeNoteEvents.add(noteMs);
                     this._triggerEvent('note', noteMs, true);
-                }, noteMs.ms * 0.001);
+                }, noteMs.ms * 0.001 + 0.1); // schedule in the future slightly to avoid double note playing at end
 
                 Tone.Transport.schedule((time: number) => {
+                    this._activeNoteEvents.delete(noteMs);
                     this._triggerEvent('note', noteMs, false);
-                }, noteMs.msEnd * 0.001);
+                }, noteMs.msEnd * 0.001 + 0.1);
 
                 return;
             }
@@ -186,7 +199,6 @@ export class SoundEngineTonejs extends SoundEngine {
                     if(Tone.Transport.loop) return;
 
                     Tone.Transport.stop();
-                    this.gotoMs(0);
                     this._triggerEvent('end', undefined);
                 }, this._endMs * 0.001);
 

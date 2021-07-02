@@ -9,10 +9,10 @@ import {Box, Flex} from './layout/Layout';
 import {Sidebar, SidebarInfo, SidebarShare, Footer} from './Sidebars';
 import styled from 'styled-components';
 
-import {PitchRuler, initialRulerState} from './PitchRuler';
+import {PitchRuler} from './PitchRuler';
 
 import {XenpaperGrammarParser} from './data/grammar';
-import type {XenpaperAST} from './data/grammar';
+import type {XenpaperAST, SetterGroupType} from './data/grammar';
 
 import {grammarToChars} from './data/grammar-to-chars';
 import {grammarToMoscScore} from './data/grammar-to-mosc';
@@ -176,6 +176,19 @@ const createCharElements = (
     });
 };
 
+const showRulerOnLoad = ({parsed}: Parsed): boolean => {
+    if(!parsed) {
+        return false;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return parsed.sequence.items
+        .filter((item): item is SetterGroupType => item.type === 'SetterGroup')
+        .map(setterGroup => setterGroup.setters.some(setter => setter.type === 'SetRulerRange'))
+        .some(hasRuler => hasRuler);
+};
+
 //
 // icons
 //
@@ -268,12 +281,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
         setHash(hash);
     });
 
-    const parsedForm = useDendriform<Parsed>({
-        parsed: undefined,
-        chars: undefined,
-        score: undefined,
-        error: ''
-    });
+    const parsedForm = useDendriform<Parsed>(() => parse(tuneForm.value.tune));
 
     tuneForm.useDerive((value) => {
         parsedForm.set(parse(value.tune));
@@ -364,7 +372,13 @@ export function XenpaperApp(props: Props): React.ReactElement {
     // ruler state
     //
 
-    const rulerState = useDendriform(initialRulerState);
+    const rulerState = useDendriform(() => ({
+        notes: new Map()
+    }));
+
+    /*parsedForm.branch('parsed').useChange((parsed) => {
+        console.log('parsed', parsed);
+    });*/
 
     useEffect(() => {
         return soundEngine.onNote((note, on) => {
@@ -381,7 +395,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
     // sidebar state
     //
 
-    const [sidebarState, setSidebar] = useState<SidebarState>('info');
+    const [sidebarState, setSidebar] = useState<SidebarState>(() => showRulerOnLoad(parsedForm.value) ? 'ruler' : 'info');
 
     const toggleSidebarInfo = useCallback(() => {
         setSidebar(s => s !== 'info' ? 'info' : 'none');
