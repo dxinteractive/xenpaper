@@ -1,4 +1,4 @@
-import {grammarToMoscScore} from '../grammar-to-mosc';
+import {processGrammar} from '../process-grammar';
 
 expect.extend({
   toBeAround(actual, expected, precision = 2) {
@@ -65,7 +65,7 @@ describe('grammar to mosc score', () => {
     const PITCH_TEST = JSON.parse(`{"type":"XenpaperGrammar","sequence":{"type":"Sequence","items":[{"type":"Comment","comment":" pitch types","pos":0},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchRatio","numerator":1,"denominator":1,"pos":14},"pos":14},"tail":{"type":"Comma","delimiter":true,"pos":17},"pos":14},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchRatio","numerator":5,"denominator":4,"pos":18},"pos":18},"tail":{"type":"Comma","delimiter":true,"pos":21},"pos":18},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchRatio","numerator":3,"denominator":2,"pos":22},"pos":22},"tail":{"type":"Comma","delimiter":true,"pos":25},"pos":22},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchRatio","numerator":2,"denominator":1,"pos":26},"pos":26},"pos":26},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchCents","cents":0,"pos":30},"pos":30},"tail":{"type":"Comma","delimiter":true,"pos":32},"pos":30},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchCents","cents":400,"pos":33},"pos":33},"tail":{"type":"Comma","delimiter":true,"pos":37},"pos":33},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchCents","cents":700,"pos":38},"pos":38},"tail":{"type":"Comma","delimiter":true,"pos":42},"pos":38},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchCents","cents":1200,"pos":43},"pos":43},"pos":43},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchHz","hz":220,"pos":49},"pos":49},"tail":{"type":"Comma","delimiter":true,"pos":54},"pos":49},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchHz","hz":440,"pos":55},"pos":55},"tail":{"type":"Comma","delimiter":true,"pos":60},"pos":55},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchHz","hz":880,"pos":61},"pos":61},"tail":{"type":"Comma","delimiter":true,"pos":66},"pos":61},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchHz","hz":1760,"pos":67},"pos":67},"pos":67},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchOctaveDivision","numerator":0,"denominator":4,"octaveSize":2,"pos":74},"pos":74},"tail":{"type":"Comma","delimiter":true,"pos":78},"pos":74},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchOctaveDivision","numerator":1,"denominator":4,"octaveSize":2,"pos":79},"pos":79},"tail":{"type":"Comma","delimiter":true,"pos":83},"pos":79},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchOctaveDivision","numerator":2,"denominator":4,"octaveSize":2,"pos":84},"pos":84},"tail":{"type":"Comma","delimiter":true,"pos":88},"pos":84},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchOctaveDivision","numerator":3,"denominator":4,"octaveSize":2,"pos":89},"pos":89},"pos":89}],"pos":0},"pos":0}`);
 
     it('should translate pitch types', () => {
-        expect(grammarToMoscScore(PITCH_TEST)).toEqual({
+        expect(processGrammar(PITCH_TEST).score).toEqual({
             sequence: [
                 ...INITIAL,
                 // pitch ratios
@@ -213,7 +213,7 @@ describe('grammar to mosc score', () => {
     const SCALE_TEST = JSON.parse(`{"type":"XenpaperGrammar","sequence":{"type":"Sequence","items":[{"type":"Comment","comment":" scale degrees","pos":0},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":16},"pos":16},"tail":{"type":"Comma","delimiter":true,"pos":17},"pos":16},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":4,"pos":18},"pos":18},"tail":{"type":"Comma","delimiter":true,"pos":19},"pos":18},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":7,"pos":20},"pos":20},"tail":{"type":"Comma","delimiter":true,"pos":21},"pos":20},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":12,"pos":22},"pos":22},"pos":22},{"type":"SetScale","scale":{"type":"PitchGroupScale","pitches":[{"type":"Pitch","value":{"type":"PitchRatio","numerator":1,"denominator":1,"pos":27},"pos":27},{"type":"Comma","delimiter":true,"pos":30},{"type":"Pitch","value":{"type":"PitchRatio","numerator":5,"denominator":4,"pos":31},"pos":31},{"type":"Comma","delimiter":true,"pos":34},{"type":"Pitch","value":{"type":"PitchRatio","numerator":3,"denominator":2,"pos":35},"pos":35},{"type":"Comma","delimiter":true,"pos":38},{"type":"Pitch","value":{"type":"PitchRatio","numerator":2,"denominator":1,"pos":39},"pos":39}],"pos":27},"pos":26},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":44},"pos":44},"tail":{"type":"Comma","delimiter":true,"pos":45},"pos":44},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":1,"pos":46},"pos":46},"tail":{"type":"Comma","delimiter":true,"pos":47},"pos":46},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":2,"pos":48},"pos":48},"tail":{"type":"Comma","delimiter":true,"pos":49},"pos":48},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":3,"pos":50},"pos":50},"pos":50},{"type":"SetScale","scale":{"type":"EdoScale","divisions":19,"octaveSize":2,"pos":54},"pos":53},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":61},"pos":61},"tail":{"type":"Comma","delimiter":true,"pos":62},"pos":61},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":6,"pos":63},"pos":63},"tail":{"type":"Comma","delimiter":true,"pos":64},"pos":63},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":11,"pos":65},"pos":65},"tail":{"type":"Comma","delimiter":true,"pos":67},"pos":65},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":19,"pos":68},"pos":68},"pos":68},{"type":"SetScale","scale":{"type":"RatioChordScale","pitches":[{"type":"RatioChordPitch","pitch":4,"pos":73},{"type":"Colon","delimiter":true,"pos":74},{"type":"RatioChordPitch","pitch":5,"pos":75},{"type":"Colon","delimiter":true,"pos":76},{"type":"RatioChordPitch","pitch":6,"pos":77},{"type":"Colon","delimiter":true,"pos":78},{"type":"RatioChordPitch","pitch":7,"pos":79},{"type":"Colon","delimiter":true,"pos":80},{"type":"RatioChordPitch","pitch":8,"pos":81}],"pos":73},"pos":72},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":84},"pos":84},"tail":{"type":"Comma","delimiter":true,"pos":85},"pos":84},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":1,"pos":86},"pos":86},"tail":{"type":"Comma","delimiter":true,"pos":87},"pos":86},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":2,"pos":88},"pos":88},"tail":{"type":"Comma","delimiter":true,"pos":89},"pos":88},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":4,"pos":90},"pos":90},"pos":90}],"pos":0},"pos":0}`);
 
     it('should translate scale degrees', () => {
-        expect(grammarToMoscScore(SCALE_TEST)).toEqual({
+        expect(processGrammar(SCALE_TEST).score).toEqual({
             sequence: [
                 ...INITIAL,
                 // default scale (12edo)
@@ -349,7 +349,7 @@ describe('grammar to mosc score', () => {
     const TIMING_TEST = JSON.parse(`{"type":"XenpaperGrammar","sequence":{"type":"Sequence","items":[{"type":"Comment","comment":" timing","pos":0},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":9},"pos":9},"tail":{"type":"Comma","delimiter":true,"pos":10},"pos":9},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":11},"pos":11},"tail":{"type":"Comma","delimiter":true,"pos":12},"pos":11},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":13},"pos":13},"tail":{"type":"Hold","length":1,"pos":14},"pos":13},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":15},"pos":15},"tail":{"type":"Hold","length":1,"pos":16},"pos":15},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":18},"pos":18},"pos":18},{"type":"Rest","length":1,"pos":19},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":20},"pos":20},"tail":{"type":"Hold","length":2,"pos":21},"pos":20},{"type":"Rest","length":1,"pos":23},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":24},"pos":24},"pos":24},{"type":"Rest","length":1,"pos":25}],"pos":0},"pos":0}`);
 
     it('should translate timing', () => {
-        expect(grammarToMoscScore(TIMING_TEST)).toEqual({
+        expect(processGrammar(TIMING_TEST).score).toEqual({
             sequence: [
                 ...INITIAL,
                 {
@@ -424,7 +424,7 @@ describe('grammar to mosc score', () => {
     const SUBDIVISION_TEST = JSON.parse(`{"type":"XenpaperGrammar","delimiter":false,"sequence":{"type":"Sequence","delimiter":false,"items":[{"type":"Comment","delimiter":false,"comment":" subdivision","len":13,"pos":0},{"type":"Whitespace","delimiter":true,"len":1,"pos":13},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":14},"len":1,"pos":14},"tail":{"type":"Comma","delimiter":true,"len":1,"pos":15},"len":2,"pos":14},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":16},"len":1,"pos":16},"tail":{"type":"Comma","delimiter":true,"len":1,"pos":17},"len":2,"pos":16},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":18},"len":1,"pos":18},"len":1,"pos":18},{"type":"Whitespace","delimiter":true,"len":2,"pos":19},{"type":"SetterGroup","delimiter":false,"setters":[{"type":"SetSubdivision","delimiter":false,"subdivision":1,"len":5,"pos":22}],"len":7,"pos":21},{"type":"Whitespace","delimiter":true,"len":1,"pos":28},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":29},"len":1,"pos":29},"tail":{"type":"Comma","delimiter":true,"len":1,"pos":30},"len":2,"pos":29},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":31},"len":1,"pos":31},"tail":{"type":"Comma","delimiter":true,"len":1,"pos":32},"len":2,"pos":31},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":33},"len":1,"pos":33},"len":1,"pos":33},{"type":"Whitespace","delimiter":true,"len":2,"pos":34},{"type":"SetterGroup","delimiter":false,"setters":[{"type":"SetSubdivision","delimiter":false,"subdivision":4,"len":5,"pos":37}],"len":7,"pos":36},{"type":"Whitespace","delimiter":true,"len":1,"pos":43},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":44},"len":1,"pos":44},"tail":{"type":"Comma","delimiter":true,"len":1,"pos":45},"len":2,"pos":44},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":46},"len":1,"pos":46},"tail":{"type":"Comma","delimiter":true,"len":1,"pos":47},"len":2,"pos":46},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":48},"len":1,"pos":48},"len":1,"pos":48}],"len":49,"pos":0},"len":49,"pos":0}`);
 
     it('should translate subdivisions', () => {
-        expect(grammarToMoscScore(SUBDIVISION_TEST)).toEqual({
+        expect(processGrammar(SUBDIVISION_TEST).score).toEqual({
             sequence: [
                 ...INITIAL,
                 {
@@ -510,7 +510,7 @@ describe('grammar to mosc score', () => {
     const TEMPO_TEST = JSON.parse(`{"type":"XenpaperGrammar","sequence":{"type":"Sequence","items":[{"type":"Comment","comment":" tempo changes","pos":0},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":16},"pos":16},"tail":{"type":"Comma","delimiter":true,"pos":17},"pos":16},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":18},"pos":18},"pos":18},{"type":"SetterGroup","setters":[{"type":"SetBpm","bpm":200,"pos":22}],"pos":21},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":30},"pos":30},"tail":{"type":"Comma","delimiter":true,"pos":31},"pos":30},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":32},"pos":32},"pos":32}],"pos":0},"pos":0}`);
 
     it('should translate tempo', () => {
-        expect(grammarToMoscScore(TEMPO_TEST)).toEqual({
+        expect(processGrammar(TEMPO_TEST).score).toEqual({
             sequence: [
                 ...INITIAL,
                 {
@@ -567,7 +567,7 @@ describe('grammar to mosc score', () => {
     const TEMPO_TEST_BMS = JSON.parse(`{"type":"XenpaperGrammar","sequence":{"type":"Sequence","items":[{"type":"Comment","comment":" tempo changes","pos":0},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":16},"pos":16},"tail":{"type":"Comma","delimiter":true,"pos":17},"pos":16},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":18},"pos":18},"pos":18},{"type":"SetterGroup","setters":[{"type":"SetBms","bms":300,"pos":22}],"pos":21},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":30},"pos":30},"tail":{"type":"Comma","delimiter":true,"pos":31},"pos":30},{"type":"Note","pitch":{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":32},"pos":32},"pos":32}],"pos":0},"pos":0}`);
 
     it('should translate tempo', () => {
-        expect(grammarToMoscScore(TEMPO_TEST_BMS)).toEqual({
+        expect(processGrammar(TEMPO_TEST_BMS).score).toEqual({
             sequence: [
                 ...INITIAL,
                 {
@@ -621,7 +621,7 @@ describe('grammar to mosc score', () => {
     const CHORDS_TEST = JSON.parse(`{"type":"XenpaperGrammar","sequence":{"type":"Sequence","items":[{"type":"Comment","comment":" chords","pos":0},{"type":"Chord","pitches":[{"type":"Pitch","value":{"type":"PitchDegree","degree":0,"pos":10},"pos":10},{"type":"Comma","delimiter":true,"pos":11},{"type":"Pitch","value":{"type":"PitchDegree","degree":4,"pos":12},"pos":12},{"type":"Comma","delimiter":true,"pos":13},{"type":"Pitch","value":{"type":"PitchDegree","degree":7,"pos":14},"pos":14}],"tail":{"type":"Hold","length":1,"pos":16},"pos":9},{"type":"Chord","pitches":[{"type":"Pitch","value":{"type":"PitchDegree","degree":2,"pos":18},"pos":18},{"type":"Comma","delimiter":true,"pos":19},{"type":"Pitch","value":{"type":"PitchDegree","degree":8,"pos":20},"pos":20},{"type":"Comma","delimiter":true,"pos":21},{"type":"Pitch","value":{"type":"PitchDegree","degree":11,"pos":22},"pos":22},{"type":"Comma","delimiter":true,"pos":24},{"type":"Pitch","value":{"type":"PitchDegree","degree":13,"pos":25},"pos":25}],"tail":{"type":"Hold","length":1,"pos":28},"pos":17}],"pos":0},"pos":0}`);
 
     it('should translate chords', () => {
-        expect(grammarToMoscScore(CHORDS_TEST)).toEqual({
+        expect(processGrammar(CHORDS_TEST).score).toEqual({
             sequence: [
                 ...INITIAL,
                 {
@@ -690,7 +690,7 @@ describe('grammar to mosc score', () => {
     const RATIOCHORDS_TEST = JSON.parse(`{"type":"XenpaperGrammar","sequence":{"type":"Sequence","items":[{"type":"Comment","comment":" ratio chords","pos":0},{"type":"RatioChord","pitches":[{"type":"RatioChordPitch","pitch":4,"pos":15},{"type":"Colon","delimiter":true,"pos":16},{"type":"RatioChordPitch","pitch":5,"pos":17}],"tail":{"type":"Hold","length":1,"pos":18},"pos":15},{"type":"Chord","pitches":[{"type":"RatioChordPitch","pitch":4,"pos":20},{"type":"Colon","delimiter":true,"pos":21},{"type":"RatioChordPitch","pitch":5,"pos":22}],"tail":{"type":"Hold","length":1,"pos":24},"pos":19}],"pos":0},"pos":0}`);
 
     it('should translate ratio chords', () => {
-        expect(grammarToMoscScore(RATIOCHORDS_TEST)).toEqual({
+        expect(processGrammar(RATIOCHORDS_TEST).score).toEqual({
             sequence: [
                 ...INITIAL,
                 {
@@ -727,6 +727,22 @@ describe('grammar to mosc score', () => {
                 }
             ],
             lengthTime: 2
+        });
+    });
+});
+
+describe('grammar to ruler state', () => {
+
+    //
+    // 1 (rl:0,'0) 2
+    //
+
+    const RULER_RANGE_TEST = JSON.parse(`{"type":"XenpaperGrammar","delimiter":false,"sequence":{"type":"Sequence","delimiter":false,"items":[{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":1,"len":1,"pos":0},"len":1,"pos":0},"len":1,"pos":0},{"type":"Whitespace","delimiter":true,"len":1,"pos":1},{"type":"SetterGroup","delimiter":false,"setters":[{"type":"SetRulerRange","delimiter":false,"low":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":6},"len":1,"pos":6},"high":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":0,"len":1,"pos":9},"octave":{"type":"OctaveModifier","delimiter":false,"octave":1,"len":1,"pos":8},"len":2,"pos":8},"len":7,"pos":3}],"len":9,"pos":2},{"type":"Whitespace","delimiter":true,"len":1,"pos":11},{"type":"Note","delimiter":false,"pitch":{"type":"Pitch","delimiter":false,"value":{"type":"PitchDegree","delimiter":false,"degree":2,"len":1,"pos":12},"len":1,"pos":12},"len":1,"pos":12}],"len":13,"pos":0},"len":13,"pos":0}`);
+
+    it('should translate ruler range', () => {
+        expect(processGrammar(RULER_RANGE_TEST).initialRulerState).toEqual({
+            lowHz: 440,
+            highHz: 880
         });
     });
 });

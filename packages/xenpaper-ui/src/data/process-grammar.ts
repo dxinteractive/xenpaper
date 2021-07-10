@@ -25,6 +25,7 @@ import type {
     SetRootType,
     SetOscType,
     SetEnvType,
+    SetRulerRangeType,
     DelimiterType
 } from './grammar';
 
@@ -221,7 +222,7 @@ type Context = {
 
 const times: [number,number][] = [];
 
-const processNote = (note: NoteType, context: Context): MoscNote[] => {
+const noteToMosc = (note: NoteType, context: Context): MoscNote[] => {
     const timeProps = tailToTime(note.tail, context);
 
     // mutate ast node to add time
@@ -237,7 +238,7 @@ const processNote = (note: NoteType, context: Context): MoscNote[] => {
     }];
 };
 
-const processChord = (chord: ChordType|RatioChordType, context: Context): MoscNote[] => {
+const chordToMosc = (chord: ChordType|RatioChordType, context: Context): MoscNote[] => {
     const {tail, pitches} = chord;
     const timeProps = tailToTime(tail, context);
 
@@ -353,7 +354,7 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
     throw new Error(`Unknown scale type "${type}"`);
 };
 
-const processSetter = (setter: SetterType, context: Context): MoscItem[] => {
+const setterToMosc = (setter: SetterType, context: Context): MoscItem[] => {
     const {type, delimiter} = setter;
 
     if(delimiter) return [];
@@ -411,30 +412,48 @@ const processSetter = (setter: SetterType, context: Context): MoscItem[] => {
         }];
     }
 
+    return [];
+};
+
+export type InitialRulerState = {
+    lowHz?: number;
+    highHz?: number;
+};
+
+const setterToRulerState = (setter: SetterType, context: Context): InitialRulerState => {
+    const {type, delimiter} = setter;
+
+    if(delimiter) return {};
+
     if(type === 'SetRulerGrid') {
-        // send some kind of external intstruction, in MoscScore but not used by moscscore
-        // so that parsing can all be done here
-        // snapshot
-        // context.scale
-        // context.scaleLabels
-        return [];
+        console.log('setter', type, setter);
+        return {};
     }
 
     if(type === 'SetRulerRange') {
-        // send some kind of external intstruction, in MoscScore but not used by moscscore
-        // so that parsing can all be done here
-        // parse
-        // high and low notes to hz
-        return [];
+        const {low, high} = setter as SetRulerRangeType;
+        return {
+            lowHz: pitchToHz(low, context),
+            highHz: pitchToHz(high, context)
+        };
     }
 
-    throw new Error(`Unknown setters type "${type}"`);
+    return {};
 };
 
-export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined => {
+export type Processed = {
+    score?: MoscScore;
+    initialRulerState?: InitialRulerState;
+};
+
+export const processGrammar = (grammar: XenpaperAST): Processed => {
+
+    // console.log('grammar', JSON.stringify(grammar));
 
     const grammarSequence = grammar.sequence;
-    if(!grammarSequence) return undefined;
+    if(!grammarSequence) {
+        return {};
+    }
 
     const INITIAL_TEMPO: MoscTempo = {
         type: 'TEMPO',
@@ -473,26 +492,30 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
         octaveSize: 2
     };
 
-    const items: MoscItem[] = flatMap(grammarSequence.items, (item): MoscItem[] => {
+    const moscItems: MoscItem[] = [];
+    let initialRulerState: InitialRulerState|undefined = {};
+
+    grammarSequence.items.forEach((item): void => {
         const {type} = item;
         if(type === 'Comment' || type === 'BarLine' || type === 'Whitespace') {
             // do nothing
-            return [];
+            return;
         }
 
         if(type === 'SetScale') {
             setScale(item as SetScaleType, context);
-            return [];
+            return;
         }
 
         if(type === 'SetRoot') {
             const {pitch} = item as SetRootType;
             context.rootHz = pitchToHz(pitch, context);
-            return [];
+            return;
         }
 
         if(type === 'Note') {
-            return processNote(item as NoteType, context);
+            moscItems.push(...noteToMosc(item as NoteType, context));
+            return;
         }
 
         if(type === 'Rest') {
@@ -503,19 +526,28 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
             const arr: [number,number] = [time, context.time];
             times.push(arr);
             rest.time = arr;
-            return [];
+            return;
         }
 
         if(type === 'Chord') {
-            return processChord(item as ChordType, context);
+            moscItems.push(...chordToMosc(item as ChordType, context));
+            return;
         }
 
         if(type === 'RatioChord') {
-            return processChord(item as RatioChordType, context);
+            moscItems.push(...chordToMosc(item as RatioChordType, context));
+            return;
         }
 
         if(type === 'SetterGroup') {
-            return flatMap((item as SetterGroupType).setters, setter => processSetter(setter, context));
+            (item as SetterGroupType).setters.forEach(setter => {
+                moscItems.push(...setterToMosc(setter, context));
+                initialRulerState = {
+                    ...initialRulerState,
+                    ...setterToRulerState(setter, context)
+                };
+            });
+            return;
         }
 
         throw new Error(`Unknown sequence item "${type}"`);
@@ -525,7 +557,7 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
         INITIAL_TEMPO,
         INITIAL_OSC,
         INITIAL_ENV,
-        ...items,
+        ...moscItems,
         {
             type: 'END_TIME',
             time: context.time
@@ -541,8 +573,13 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
         time[1] = thisTimeToMs(time[1]);
     });
 
-    return {
+    const score = {
         sequence,
         lengthTime: context.time
+    };
+
+    return {
+        score,
+        initialRulerState
     };
 };

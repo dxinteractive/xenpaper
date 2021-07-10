@@ -617,7 +617,7 @@ export const SetRulerGrid = node/*<SetRulerGridType>*/(
 
 export type SetRulerType = SetRulerRangeType|SetRulerGridType;
 
-export const SetRuler = Any(SetRulerRange,SetRulerGrid);
+export const SetRuler = Any(SetRulerRange, SetRulerGrid);
 
 // setters
 
