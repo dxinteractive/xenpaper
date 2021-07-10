@@ -46,7 +46,7 @@ export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
     const {onSetTune, setSidebar} = props;
     return <Sidebar setSidebar={setSidebar} pad>
         <H>How it works</H>
-        <B>Create tunes by typing in the text area. Press play to hear what you{"'"}ve written, or press <C>Ctrl / Cmd + Enter</C>.</B>
+        <B>Create tunes by typing in the text area. Press play to hear what you{"'"}ve written.{/*, or press <C>Ctrl / Cmd + Enter</C>.*/}</B>
         <Box pt={4}><H>Notes</H></Box>
         <B>Typing a number will create a note. Notes can be separated by spaces or commas.
             <Ex tune="0 4 7 12" color="pitch" onSetTune={onSetTune} />
