@@ -9,19 +9,21 @@ import {Box, Flex} from './layout/Layout';
 import {Sidebar, SidebarInfo, SidebarShare, Footer} from './Sidebars';
 import styled from 'styled-components';
 
-import {PitchRuler} from './PitchRuler';
+import {PitchRuler, useRulerState} from './PitchRuler';
+import type {RulerState} from './PitchRuler';
 
 import {XenpaperGrammarParser} from './data/grammar';
 import type {XenpaperAST, SetterGroupType} from './data/grammar';
 
 import {grammarToChars} from './data/grammar-to-chars';
-import {grammarToMoscScore} from './data/grammar-to-mosc';
+import {processGrammar} from './data/process-grammar';
+import type {InitialRulerState} from './data/process-grammar';
 import type {MoscScore} from '@xenpaper/mosc';
 import type {HighlightColor, CharData} from './data/grammar-to-chars';
 
 import {useHash, hashify} from './hooks/useHash';
 import {useWindowLoaded} from './hooks/useWindowLoaded';
-import {useAnimationFrame} from './hooks/useAnimationFrame';
+
 import {useDendriform, useInput} from 'dendriform';
 import type {Dendriform} from 'dendriform';
 import {setAutoFreeze, enableMapSet} from 'immer';
@@ -48,13 +50,14 @@ type Parsed = {
     parsed?: XenpaperAST;
     chars?: CharData[];
     score?: MoscScore;
+    initialRulerState?: InitialRulerState;
     error: string;
 };
 
 const parse = (unparsed: string): Parsed => {
     try {
         const parsed = XenpaperGrammarParser(unparsed);
-        const score = grammarToMoscScore(parsed);
+        const {score, initialRulerState} = processGrammar(parsed);
         const chars = grammarToChars(parsed);
 
         if(score) {
@@ -66,6 +69,7 @@ const parse = (unparsed: string): Parsed => {
             parsed,
             chars,
             score,
+            initialRulerState,
             error: ''
         };
 
@@ -108,6 +112,7 @@ const parse = (unparsed: string): Parsed => {
             parsed: undefined,
             chars,
             score: undefined,
+            initialRulerState: undefined,
             error
         };
     }
@@ -135,58 +140,6 @@ const getMsAtLine = (tune: string, chars: CharData[]|undefined, line: number): n
         }
     }
     return 0;
-};
-
-type CharProps = {
-    className: string;
-    color?: HighlightColor;
-    children: string;
-};
-
-const createCharElements = (
-    tune: string,
-    chars: CharData[]|undefined,
-    time: number,
-    layoutModeOn: boolean,
-    layoutModeNotes: number[]
-): CharProps[] => {
-
-    return tune.split('').map((chr, index) => {
-        const ch: CharData|undefined = chars?.[index];
-        const [start, end] = ch?.playTime ?? [];
-
-        const activeFromPlayhead = !layoutModeOn
-            && time !== -1
-            && start !== undefined
-            && end !== undefined
-            && start <= time
-            && end > time;
-
-        const activeFromRealtime = layoutModeOn
-            && layoutModeNotes.length > 0
-            && layoutModeNotes.some(n => n === start);
-
-        const active = activeFromPlayhead || activeFromRealtime;
-
-        return {
-            className: active ? 'active' : '',
-            color: ch?.color,
-            children: chr
-        };
-    });
-};
-
-const showRulerOnLoad = ({parsed}: Parsed): boolean => {
-    if(!parsed) {
-        return false;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return parsed.sequence.items
-        .filter((item): item is SetterGroupType => item.type === 'SetterGroup')
-        .map(setterGroup => setterGroup.setters.some(setter => setter.type === 'SetRulerRange'))
-        .some(hasRuler => hasRuler);
 };
 
 //
@@ -288,22 +241,6 @@ export function XenpaperApp(props: Props): React.ReactElement {
     });
 
     //
-    // ui modes
-    //
-
-    /*const layoutMode = useDendriform<RealtimeState>({
-        on: false,
-        activeNotes: []
-    });
-
-    const handleToggleRealtime = useCallback(() => {
-        layoutMode.set(draft => {
-            draft.on = !draft.on;
-            draft.activeNotes = [];
-        });
-    }, []);*/
-
-    //
     // state syncing between sound engine and react
     //
 
@@ -322,6 +259,26 @@ export function XenpaperApp(props: Props): React.ReactElement {
     const looping = useDendriform<boolean>(false);
 
     //
+    // ruler state
+    //
+
+    const rulerState = useRulerState(parsedForm.value.initialRulerState);
+
+    useEffect(() => {
+        return soundEngine.onNote((note, on) => {
+            const id = `${note.ms}-${note.hz}`;
+            rulerState.set(draft => {
+                if(on) {
+                    draft.notesActive.set(id, note);
+                    draft.notes.set(id, note);
+                } else {
+                    draft.notesActive.delete(id);
+                }
+            });
+        });
+    }, []);
+
+    //
     // sound engine callbacks
     //
 
@@ -331,7 +288,15 @@ export function XenpaperApp(props: Props): React.ReactElement {
         soundEngine.gotoMs(getMsAtLine(tuneForm.value.tune, parsedForm.value.chars, selectedLine.value));
 
         playing.set(play);
-        play ? soundEngine.play() : soundEngine.pause();
+
+        if(play) {
+            soundEngine.play();
+            rulerState.set(draft => {
+                draft.notes.clear();
+            });
+        } else {
+            soundEngine.pause();
+        }
     }, []);
 
     const handleTogglePlayback = useCallback((state: string) => {
@@ -369,33 +334,12 @@ export function XenpaperApp(props: Props): React.ReactElement {
     }, []);
 
     //
-    // ruler state
-    //
-
-    const rulerState = useDendriform(() => ({
-        notes: new Map()
-    }));
-
-    /*parsedForm.branch('parsed').useChange((parsed) => {
-        console.log('parsed', parsed);
-    });*/
-
-    useEffect(() => {
-        return soundEngine.onNote((note, on) => {
-            const id = `${note.ms}-${note.hz}`;
-            rulerState.branch('notes').set(draft => {
-                on
-                    ? draft.set(id, note)
-                    : draft.delete(id);
-            });
-        });
-    }, []);
-
-    //
     // sidebar state
     //
 
-    const [sidebarState, setSidebar] = useState<SidebarState>(() => showRulerOnLoad(parsedForm.value) ? 'ruler' : 'info');
+    const [sidebarState, setSidebar] = useState<SidebarState>(() => {
+        return parsedForm.value?.initialRulerState?.lowHz ? 'ruler' : 'info';
+    });
 
     const toggleSidebarInfo = useCallback(() => {
         setSidebar(s => s !== 'info' ? 'info' : 'none');
@@ -415,25 +359,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
         handleSetPlayback(true);
     }, []);
 
-    //
-    // textarea focus control
-    //
-
-    const focusCodearea = useCallback(() => {
-        // TODO
-    }, []);
-
-    // release layoutMode notes
-
-    const onMouseUp = useCallback(() => {
-        // TODO, why errors?
-        //layoutMode.branch('activeNotes').set([]);
-    }, []);
-
-    const codepaneContainerProps = {
-        onClick: focusCodearea,
-        onMouseUp
-    };
+    const codepaneContainerProps = {};
 
     //
     // elements
@@ -465,7 +391,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
     const sidebarToggles = <>
         <SideButton onClick={toggleSidebarInfo}>Info</SideButton>
         <SideButton onClick={toggleSidebarShare}>Share</SideButton>
-        <SideButton onClick={toggleSidebarRuler}>Ruler</SideButton>
+        {/*<SideButton onClick={toggleSidebarRuler}>Ruler</SideButton>*/}
     </>;
 
     const sidebar = <>
@@ -515,10 +441,6 @@ export function XenpaperApp(props: Props): React.ReactElement {
         sidebar={sidebar}
         codepaneContainerProps={codepaneContainerProps}
     />;
-
-    /* layoutMode.branch('on').render(layoutMode => {
-                    return <SideButton multiline onClick={handleToggleRealtime} active={layoutMode.useValue()}>Layout<br/>mode</SideButton>;
-                })*/
 }
 
 //
@@ -633,16 +555,8 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
 
         const embed = form.branch('embed').useValue();
 
-        // keep track of sound engine time
-        const [time, setTime] = useState<number>(0);
-        useAnimationFrame(() => {
-            setTime(soundEngine.playing() ? soundEngine.position() : -1);
-        }, []);
-
         // get dendriform state values
         const {chars, error} = props.parsedForm.useValue();
-        const layoutModeOn = false; //layoutMode.branch('on').useValue();
-        const layoutModeNotes: number[] = []; // layoutMode.branch('activeNotes').useValue();
 
         // use value with a 200ms debounce for perf reasons
         // this debounce does cause the code value to progress forward
@@ -650,17 +564,10 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
         // so colours will be momentarily skew-whiff
         // but thats better than parsing the xenpaper AST at every keystroke
         const inputProps = useInput(form.branch('tune'), 200);
+        const tuneChars: string[] = inputProps.value.split('');
+        const charDataArray: (CharData|undefined)[] = tuneChars.map((chr, index) => chars?.[index]);
 
-        // create char elements
-        const charElementProps = createCharElements(
-            inputProps.value,
-            chars,
-            time,
-            layoutModeOn,
-            layoutModeNotes
-        );
-
-        const hasPlayStartButtons = charElementProps.some(props => props.children === '\n');
+        const hasPlayStartButtons = tuneChars.some(ch => ch === '\n');
         let playStartLine = 0;
 
         const charElements: React.ReactNode[] = [];
@@ -676,9 +583,17 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
         if(hasPlayStartButtons) {
             createPlayStart();
         }
-        charElementProps.forEach((props, index) => {
-            charElements.push(<Char key={index} {...props} />);
-            if(props.children === '\n') {
+        charDataArray.forEach((charData, index) => {
+            const ch = tuneChars[index];
+
+            charElements.push(<Char
+                key={index}
+                ch={ch}
+                charData={charData}
+                soundEngine={soundEngine}
+            />);
+
+            if(ch === '\n') {
                 createPlayStart();
             }
         });
@@ -687,7 +602,7 @@ function CodePanel(props: CodePanelProps): React.ReactElement {
         const stopPropagation = (e: Event) => e.stopPropagation();
 
         return <Box onClick={stopPropagation}>
-            <Codearea {...inputProps} charElements={charElements} freeze={layoutModeOn || embed} />
+            <Codearea {...inputProps} charElements={charElements} freeze={embed} />
             {error && <Box>
                 <ErrorMessage>Error: {error}</ErrorMessage>
             </Box>}
