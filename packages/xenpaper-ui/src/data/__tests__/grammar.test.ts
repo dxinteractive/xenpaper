@@ -1649,6 +1649,54 @@ describe('grammar', () => {
                 ]);
             });
 
+            it('should parse sequence with ruler setter', () => {
+                expect(strip(parser('(rl:200c,400c)')).sequence.items).toEqual([
+                    {
+                        type: 'SetterGroup',
+                        setters: [
+                            {
+                                type: 'SetRulerRange',
+                                high: {
+                                    len: 4,
+                                    type: "Pitch",
+                                    value: {
+                                        cents: 400,
+                                        len: 4,
+                                        type: "PitchCents"
+                                    }
+                                },
+                                len: 12,
+                                low: {
+                                    len: 4,
+                                    type: "Pitch",
+                                    value: {
+                                        cents: 200,
+                                        len: 4,
+                                        type: "PitchCents"
+                                    }
+                                }
+                            }
+                        ],
+                        len: 14
+                    }
+                ]);
+            });
+
+            it('should parse sequence with ruler grid', () => {
+                expect(strip(parser('(rl:grid)')).sequence.items).toEqual([
+                    {
+                        type: 'SetterGroup',
+                        setters: [
+                            {
+                                type: 'SetRulerGrid',
+                                len: 7
+                            }
+                        ],
+                        len: 9
+                    }
+                ]);
+            });
+
             it('should error if setter is empty or not delimited properly', () => {
                 expect(() => parser('()')).toThrow('Unexpected token at 1:2. Remainder: )');
                 expect(() => parser('(div:16;)')).toThrow('Unexpected token at 1:9. Remainder: )');

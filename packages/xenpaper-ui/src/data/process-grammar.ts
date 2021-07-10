@@ -25,6 +25,7 @@ import type {
     SetRootType,
     SetOscType,
     SetEnvType,
+    SetRulerRangeType,
     DelimiterType
 } from './grammar';
 
@@ -46,12 +47,6 @@ import {
 //
 // utils
 //
-
-const flatMap = <I,O>(arr: I[], mapper: (item: I) => O[]): O[] => {
-    const out: O[] = [];
-    arr.forEach(item => out.push(...mapper(item)));
-    return out;
-};
 
 const limit = (name: string, value: number, min: number, max: number): void => {
     if(value < min || value > max) {
@@ -89,7 +84,7 @@ export const pitchToRatio = (pitch: PitchType, scale: number[], octaveSize: numb
 
     if(type === 'PitchDegree') {
         const {degree} = pitch.value as PitchDegreeType;
-        return scaleRatio(degree, scale, octaveSize) * octaveMulti;
+        return pitchDegreeToRatio(degree, scale, octaveSize) * octaveMulti;
     }
 
     throw new Error(`Unknown pitch type "${type}"`);
@@ -103,13 +98,8 @@ const edoToRatios = (edoSize: number, octaveSize: number): number[] => {
     return ratios;
 };
 
-const scaleRatio = (degree: number, scale: number[], octaveSize: number): number => {
+const pitchDegreeWrap = (degree: number, scale: number[]): [number, number] => {
     limit('Scale degree', degree, -1000, 1000);
-    limit('Octave size', octaveSize, -20, 20);
-
-    if(scale.length === 0) {
-        return 1;
-    }
 
     const steps = scale.length;
     let octave = 0;
@@ -123,9 +113,19 @@ const scaleRatio = (degree: number, scale: number[], octaveSize: number): number
         octave--;
     }
 
-    return scale[degree] * Math.pow(octaveSize, octave);
+    return [degree, octave];
 };
 
+const pitchDegreeToRatio = (degree: number, scale: number[], octaveSize: number): number => {
+    limit('Octave size', octaveSize, -20, 20);
+
+    if(scale.length === 0) {
+        return 1;
+    }
+
+    const [wrappedDegree, octave] = pitchDegreeWrap(degree, scale);
+    return scale[wrappedDegree] * Math.pow(octaveSize, octave);
+};
 
 const pitchToHz = (pitch: PitchType, context: Context): number => {
     if(pitch.value.type === 'PitchHz') {
@@ -154,6 +154,52 @@ const tailToTime = (tail: TailType|undefined, context: Context): {time: number, 
 };
 
 //
+// labels
+//
+
+export const pitchToLabel = (pitch: PitchType, context: Context): string => {
+    const {type} = pitch.value;
+
+    if(type === 'PitchRatio') {
+        const {numerator, denominator} = pitch.value as PitchRatioType;
+        const ratio = numerator / denominator;
+        limit('Pitch ratio', ratio, 0, 100);
+        return `${numerator}/${denominator}`;
+    }
+
+    if(type === 'PitchCents') {
+        const {cents} = pitch.value as PitchCentsType;
+        return `${cents}c`;
+    }
+
+    if(type === 'PitchOctaveDivision') {
+        const {numerator, denominator} = pitch.value as PitchOctaveDivisionType;
+        return `${numerator}\\${denominator}`;
+    }
+
+    if(type === 'PitchDegree') {
+        const {degree} = pitch.value as PitchDegreeType;
+        const [wrappedDegree] = pitchDegreeWrap(degree, context.scale);
+        return context.scaleLabels[wrappedDegree];
+    }
+
+    if(type === 'PitchHz') {
+        const {hz} = pitch.value as PitchHzType;
+        return `${hz}Hz`;
+    }
+
+    throw new Error(`Unknown pitch type "${type}"`);
+};
+
+const edoToLabels = (edoSize: number): string[] => {
+    const labels: string[] = [];
+    for(let i = 0; i < edoSize; i++) {
+        labels.push(`${i}\\${edoSize}`);
+    }
+    return labels;
+};
+
+//
 // converters
 //
 
@@ -164,12 +210,13 @@ type Context = {
     time: number;
     subdivision: number;
     scale: number[];
+    scaleLabels: string[];
     octaveSize: number;
 };
 
 const times: [number,number][] = [];
 
-const processNote = (note: NoteType, context: Context): MoscNote[] => {
+const noteToMosc = (note: NoteType, context: Context): MoscNote[] => {
     const timeProps = tailToTime(note.tail, context);
 
     // mutate ast node to add time
@@ -180,11 +227,12 @@ const processNote = (note: NoteType, context: Context): MoscNote[] => {
     return [{
         type: 'NOTE_TIME',
         hz: pitchToHz(note.pitch, context),
+        label: pitchToLabel(note.pitch, context),
         ...timeProps
     }];
 };
 
-const processChord = (chord: ChordType|RatioChordType, context: Context): MoscNote[] => {
+const chordToMosc = (chord: ChordType|RatioChordType, context: Context): MoscNote[] => {
     const {tail, pitches} = chord;
     const timeProps = tailToTime(tail, context);
 
@@ -199,6 +247,7 @@ const processChord = (chord: ChordType|RatioChordType, context: Context): MoscNo
             return {
                 type: 'NOTE_TIME',
                 hz: pitchToHz(pitch as PitchType, context),
+                label: pitchToLabel(pitch as PitchType, context),
                 ...timeProps
             };
         });
@@ -210,10 +259,12 @@ const processChord = (chord: ChordType|RatioChordType, context: Context): MoscNo
     const ratioPitchTypes: MoscNote[] = pitches
         .filter((pitch): pitch is RatioChordPitchType => pitch.type === 'RatioChordPitch')
         .map((pitch: any) => {
-            const ratio = (pitch as RatioChordPitchType).pitch / (firstRatioPitch as RatioChordPitchType).pitch;
+            const numerator = (pitch as RatioChordPitchType).pitch;
+            const denominator = (firstRatioPitch as RatioChordPitchType).pitch;
             return {
                 type: 'NOTE_TIME',
-                hz: ratio * context.rootHz,
+                hz: numerator / denominator * context.rootHz,
+                label: `${numerator}/${denominator}`,
                 ...timeProps
             };
         });
@@ -258,9 +309,11 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
         }
 
         context.scale = filteredPitches.map(pitch => pitchToRatio(pitch, context.scale, context.octaveSize));
+        context.scaleLabels = filteredPitches.map(pitch => pitchToLabel(pitch, context));
 
         if(scaleOctaveMarker) {
             context.octaveSize = context.scale.pop() || 2;
+            context.scaleLabels.pop();
         }
 
         return;
@@ -269,6 +322,7 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
     if(type === 'EdoScale') {
         const {divisions, octaveSize} = scale as EdoScaleType;
         context.scale = edoToRatios(divisions, octaveSize);
+        context.scaleLabels = edoToLabels(divisions);
         context.octaveSize = octaveSize;
         return;
     }
@@ -281,9 +335,11 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
             .map(pitch => pitch.pitch);
 
         context.scale = ratios.map(ratio => ratio / ratios[0]);
+        context.scaleLabels = ratios.map(ratio => `${ratio}/${ratios[0]}`);
 
         if(scaleOctaveMarker) {
             context.octaveSize = context.scale.pop() || 2;
+            context.scaleLabels.pop();
         }
 
         return;
@@ -292,7 +348,7 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
     throw new Error(`Unknown scale type "${type}"`);
 };
 
-const processSetter = (setter: SetterType, context: Context): MoscItem[] => {
+const setterToMosc = (setter: SetterType, context: Context): MoscItem[] => {
     const {type, delimiter} = setter;
 
     if(delimiter) return [];
@@ -350,13 +406,47 @@ const processSetter = (setter: SetterType, context: Context): MoscItem[] => {
         }];
     }
 
-    throw new Error(`Unknown setters type "${type}"`);
+    return [];
 };
 
-export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined => {
+export type InitialRulerState = {
+    lowHz?: number;
+    highHz?: number;
+};
+
+const setterToRulerState = (setter: SetterType, context: Context): InitialRulerState => {
+    const {type, delimiter} = setter;
+
+    if(delimiter) return {};
+
+    if(type === 'SetRulerGrid') {
+        return {};
+    }
+
+    if(type === 'SetRulerRange') {
+        const {low, high} = setter as SetRulerRangeType;
+        return {
+            lowHz: pitchToHz(low, context),
+            highHz: pitchToHz(high, context)
+        };
+    }
+
+    return {};
+};
+
+export type Processed = {
+    score?: MoscScore;
+    initialRulerState?: InitialRulerState;
+};
+
+export const processGrammar = (grammar: XenpaperAST): Processed => {
+
+    // console.log('grammar', JSON.stringify(grammar));
 
     const grammarSequence = grammar.sequence;
-    if(!grammarSequence) return undefined;
+    if(!grammarSequence) {
+        return {};
+    }
 
     const INITIAL_TEMPO: MoscTempo = {
         type: 'TEMPO',
@@ -391,29 +481,34 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
         time: 0,
         subdivision: 0.5,
         scale: edoToRatios(12, 2),
+        scaleLabels: edoToLabels(12),
         octaveSize: 2
     };
 
-    const items: MoscItem[] = flatMap(grammarSequence.items, (item): MoscItem[] => {
+    const moscItems: MoscItem[] = [];
+    let initialRulerState: InitialRulerState|undefined = {};
+
+    grammarSequence.items.forEach((item): void => {
         const {type} = item;
         if(type === 'Comment' || type === 'BarLine' || type === 'Whitespace') {
             // do nothing
-            return [];
+            return;
         }
 
         if(type === 'SetScale') {
             setScale(item as SetScaleType, context);
-            return [];
+            return;
         }
 
         if(type === 'SetRoot') {
             const {pitch} = item as SetRootType;
             context.rootHz = pitchToHz(pitch, context);
-            return [];
+            return;
         }
 
         if(type === 'Note') {
-            return processNote(item as NoteType, context);
+            moscItems.push(...noteToMosc(item as NoteType, context));
+            return;
         }
 
         if(type === 'Rest') {
@@ -424,19 +519,28 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
             const arr: [number,number] = [time, context.time];
             times.push(arr);
             rest.time = arr;
-            return [];
+            return;
         }
 
         if(type === 'Chord') {
-            return processChord(item as ChordType, context);
+            moscItems.push(...chordToMosc(item as ChordType, context));
+            return;
         }
 
         if(type === 'RatioChord') {
-            return processChord(item as RatioChordType, context);
+            moscItems.push(...chordToMosc(item as RatioChordType, context));
+            return;
         }
 
         if(type === 'SetterGroup') {
-            return flatMap((item as SetterGroupType).setters, setter => processSetter(setter, context));
+            (item as SetterGroupType).setters.forEach(setter => {
+                moscItems.push(...setterToMosc(setter, context));
+                initialRulerState = {
+                    ...initialRulerState,
+                    ...setterToRulerState(setter, context)
+                };
+            });
+            return;
         }
 
         throw new Error(`Unknown sequence item "${type}"`);
@@ -446,7 +550,7 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
         INITIAL_TEMPO,
         INITIAL_OSC,
         INITIAL_ENV,
-        ...items,
+        ...moscItems,
         {
             type: 'END_TIME',
             time: context.time
@@ -462,8 +566,13 @@ export const grammarToMoscScore = (grammar: XenpaperAST): MoscScore|undefined =>
         time[1] = thisTimeToMs(time[1]);
     });
 
-    return {
+    const score = {
         sequence,
         lengthTime: context.time
+    };
+
+    return {
+        score,
+        initialRulerState
     };
 };

@@ -7,6 +7,7 @@ export type MoscNote = {
     time: number;
     timeEnd: number;
     hz: number;
+    label: string;
 };
 
 export type MoscNoteMs = {
@@ -14,6 +15,7 @@ export type MoscNoteMs = {
     ms: number;
     msEnd: number;
     hz: number;
+    label: string;
 };
 
 export type MoscParam = {
@@ -158,6 +160,7 @@ export const scoreToMs = (score: MoscScore): MoscScoreMs => {
                 return {
                     type: 'NOTE_MS',
                     hz: note.hz,
+                    label: note.label,
                     ms: thisTimeToMs(note.time),
                     msEnd: thisTimeToMs(note.timeEnd)
                 };
@@ -191,14 +194,13 @@ export const scoreToMs = (score: MoscScore): MoscScoreMs => {
 // soud engine base class
 //
 
-type SoundEngineEvent = 'end';
-type SoundEngineEventCallback = () => void;
+type SoundEngineEndEventCallback = () => void;
+type SoundEngineNoteEventCallback = (noteMs: MoscNoteMs, on: boolean) => void;
 type SoundEngineEventCallbackCancel = () => void;
 
 export class SoundEngine {
 
     scoreMs?: MoscScoreMs;
-    events = new Map<SoundEngineEventCallback, SoundEngineEvent>();
 
     playing(): boolean {
         return false;
@@ -222,18 +224,36 @@ export class SoundEngine {
 
     async gotoMs(ms: number): Promise<void> {}
 
-    async setLoop(loop: boolean, startMs: number = 0, endMs: number = 0): Promise<void> {}
-
-    async setLoopStart(ms: number = 0): Promise<void> {}
-
-    async setLoopEnd(ms: number = 0): Promise<void> {}
+    setLoop(loop: boolean, startMs: number = 0, endMs: number = 0): void {}
+    setLoopActive(loop: boolean): void {}
+    setLoopStart(ms: number = 0): void {}
+    setLoopEnd(ms: number = 0): void {}
 
     async setScore(scoreMs: MoscScoreMs): Promise<void> {}
 
-    on(eventType: SoundEngineEvent, callback: SoundEngineEventCallback): SoundEngineEventCallbackCancel {
-        this.events.set(callback, eventType);
+    // events
+
+    events = {
+        end: new Set<SoundEngineEndEventCallback>(),
+        note: new Set<SoundEngineNoteEventCallback>()
+    };
+
+    _triggerEvent(type: string, ...params: any) {
+        // @ts-ignore
+        this.events[type].forEach(cb => cb(...params));
+    }
+
+    onEnd(callback: SoundEngineEndEventCallback): SoundEngineEventCallbackCancel {
+        this.events.end.add(callback);
         return () => {
-            this.events.delete(callback);
+            this.events.end.delete(callback);
+        };
+    }
+
+    onNote(callback: SoundEngineNoteEventCallback): SoundEngineEventCallbackCancel {
+        this.events.note.add(callback);
+        return () => {
+            this.events.note.delete(callback);
         };
     }
 }

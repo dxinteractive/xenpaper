@@ -8,32 +8,8 @@ import {textStyle, typography} from 'styled-system';
 // @ts-ignore
 import logo from './assets/xenpaper-logo-512x512.png';
 
-import type {Dendriform} from 'dendriform';
-import type {SidebarState, TuneForm} from './Xenpaper';
+import type {SidebarState} from './Xenpaper';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
-
-type Props = {
-    sidebar: SidebarState;
-    onSetTune: (tune: string) => void;
-    setSidebar: (open: SidebarState) => void;
-    tuneForm: Dendriform<TuneForm>;
-};
-
-export function Sidebars(props: Props): React.ReactElement|null {
-    const {sidebar, onSetTune, setSidebar, tuneForm} = props;
-    return <>
-        {sidebar === 'info' && <SidebarInfo onSetTune={onSetTune} setSidebar={setSidebar} />}
-        {sidebar === 'share' && tuneForm.render(form => {
-            const url = form.branch('url').useValue();
-            const urlEmbed = form.branch('urlEmbed').useValue();
-            return <SidebarShare setSidebar={setSidebar} url={url} urlEmbed={urlEmbed} />;
-        })}
-    </>;
-}
-
-//
-// constituent components
-//
 
 const Flink = styled.a`
     color: ${props => props.theme.colors.highlights.unknown};
@@ -66,11 +42,11 @@ type SidebarInfoProps = {
     setSidebar: (open: SidebarState) => void;
 };
 
-const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
+export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
     const {onSetTune, setSidebar} = props;
-    return <Sidebar setSidebar={setSidebar}>
+    return <Sidebar setSidebar={setSidebar} pad>
         <H>How it works</H>
-        <B>Create tunes by typing in the text area. Press play to hear what you{"'"}ve written, or press <C>Ctrl / Cmd + Enter</C>.</B>
+        <B>Create tunes by typing in the text area. Press play to hear what you{"'"}ve written.{/*, or press <C>Ctrl / Cmd + Enter</C>.*/}</B>
         <Box pt={4}><H>Notes</H></Box>
         <B>Typing a number will create a note. Notes can be separated by spaces or commas.
             <Ex tune="0 4 7 12" color="pitch" onSetTune={onSetTune} />
@@ -172,7 +148,7 @@ type SidebarShareProps = {
     urlEmbed: string;
 };
 
-const SidebarShare = (props: SidebarShareProps): React.ReactElement => {
+export const SidebarShare = (props: SidebarShareProps): React.ReactElement => {
     const {setSidebar, url, urlEmbed} = props;
 
     const iframeCode = `<iframe width="560" height="315" src="${urlEmbed}" title="Xenpaper" frameborder="0"></iframe>`;
@@ -180,7 +156,7 @@ const SidebarShare = (props: SidebarShareProps): React.ReactElement => {
     const [copiedLink, setCopiedLink] = useState<boolean>(false);
     const [copiedIframe, setCopiedIframe] = useState<boolean>(false);
 
-    return <Sidebar setSidebar={setSidebar}>
+    return <Sidebar setSidebar={setSidebar} pad>
         <Box>
             <H>Share link</H>
             <Flex>
@@ -225,11 +201,13 @@ const ShareInput = styled.input.attrs(() => ({readOnly: true}))`
 type SidebarProps = {
     setSidebar: (open: SidebarState) => void;
     children: React.ReactNode;
+    title?: string;
+    pad?: boolean;
 };
 
-const Sidebar = (props: SidebarProps): React.ReactElement => {
-    const {setSidebar, children} = props;
-    return <TextPanel maxWidth={['100rem', '20rem', '30rem', '30rem', '40rem']} flexShrink="0" minHeight="0">
+export const Sidebar = (props: SidebarProps): React.ReactElement => {
+    const {setSidebar, children, title, pad} = props;
+    return <TextPanel width={['100rem', '20rem', '30rem', '40%']} flexDirection="column" flexShrink="0" minHeight="0">
         <Box position={["absolute", "fixed"]} top={0} right={0} pt={3} pr={3}>
             <IconToggle
                 state="cross"
@@ -242,24 +220,29 @@ const Sidebar = (props: SidebarProps): React.ReactElement => {
             />
         </Box>
         <LogoArea>
-            <Flex alignItems="center">
-                <Box mr={4} width="5rem" pt={2}>
-                    <img alt="Xenpaper logo" src={logo} width="100%" />
-                </Box>
-                <Box>
-                    <Logo>xenpaper</Logo>
-                    <Text as="div" color="text.placeholder" style={{fontStyle: "italic", lineHeight: '1.3rem'}}>Text-based microtonal sequencer.</Text>
-                    <Text as="div" color="text.placeholder" style={{fontStyle: "italic", lineHeight: '1.3rem'}}>Write down musical ideas and share the link around.</Text>
-                </Box>
-            </Flex>
+            {title &&
+                <Hsize>{title}</Hsize>
+            }
+            {!title &&
+                <Flex alignItems="center">
+                    <Box mr={4} width="5rem" pt={2}>
+                        <img alt="Xenpaper logo" src={logo} width="100%" />
+                    </Box>
+                    <Box>
+                        <Logo>xenpaper</Logo>
+                        <Text as="div" color="text.placeholder" style={{fontStyle: "italic", lineHeight: '1.3rem'}}>Text-based microtonal sequencer.</Text>
+                        <Text as="div" color="text.placeholder" style={{fontStyle: "italic", lineHeight: '1.3rem'}}>Write down musical ideas and share the link around.</Text>
+                    </Box>
+                </Flex>
+            }
         </LogoArea>
-        <Box p={4}>
+        <Box p={pad ? 4 : 0} flexGrow="1">
             {children}
         </Box>
     </TextPanel>;
 };
 
-const TextPanel = styled(Box)`
+const TextPanel = styled(Flex)`
     background-color: ${props => props.theme.colors.background.light};
     font-family: ${props => props.theme.fonts.copy};
     position: relative;
@@ -300,6 +283,10 @@ const B = styled.div`
 const H = styled.h2`
     font-size: 1.5rem;
     margin-bottom: 1rem;
+`;
+
+const Hsize = styled.h2`
+    font-size: 1.5rem;
 `;
 
 const C = styled.span`
