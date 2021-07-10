@@ -48,12 +48,6 @@ import {
 // utils
 //
 
-const flatMap = <I,O>(arr: I[], mapper: (item: I) => O[]): O[] => {
-    const out: O[] = [];
-    arr.forEach(item => out.push(...mapper(item)));
-    return out;
-};
-
 const limit = (name: string, value: number, min: number, max: number): void => {
     if(value < min || value > max) {
         throw new Error(`${name} must be between ${min} and ${max}, got ${value}`);
@@ -426,7 +420,6 @@ const setterToRulerState = (setter: SetterType, context: Context): InitialRulerS
     if(delimiter) return {};
 
     if(type === 'SetRulerGrid') {
-        console.log('setter', type, setter);
         return {};
     }
 
