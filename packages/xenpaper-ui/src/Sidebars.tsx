@@ -29,7 +29,7 @@ const Flink = styled.a`
 export const Footer = styled(props => {
     return <Box px={3} py={2} {...props}>
         <Text as="div" color="text.placeholder">
-            <Flink href="#">Xenpaper</Flink> <Flink target="_blank" href="https://github.com/dxinteractive/xenpaper/releases">(v1.4.1)</Flink> is made by <Flink target="_blank" href="https://damienclarke.me">Damien Clarke</Flink> using <Flink target="_blank" href="https://www.typescriptlang.org/">typescript</Flink>, <Flink target="_blank" href="https://reactjs.org/">react</Flink>, <Flink target="_blank" href="https://tonejs.github.io/">tonejs</Flink>, <Flink target="_blank" href="https://github.com/dmaevsky/rd-parse">rd-parse</Flink>, <Flink target="_blank" href="https://styled-components.com/">styled-components</Flink> and <Flink target="_blank" href="https://dendriform.xyz">dendriform</Flink>.
+            <Flink href="#">Xenpaper</Flink> <Flink target="_blank" href="https://github.com/dxinteractive/xenpaper/releases">(v1.5.0)</Flink> is made by <Flink target="_blank" href="https://damienclarke.me">Damien Clarke</Flink> using <Flink target="_blank" href="https://www.typescriptlang.org/">typescript</Flink>, <Flink target="_blank" href="https://reactjs.org/">react</Flink>, <Flink target="_blank" href="https://tonejs.github.io/">tonejs</Flink>, <Flink target="_blank" href="https://github.com/dmaevsky/rd-parse">rd-parse</Flink>, <Flink target="_blank" href="https://styled-components.com/">styled-components</Flink> and <Flink target="_blank" href="https://dendriform.xyz">dendriform</Flink>.
         </Text>
     </Box>;
 })`
