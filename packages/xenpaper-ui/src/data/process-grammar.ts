@@ -58,7 +58,8 @@ const limit = (name: string, value: number, min: number, max: number): void => {
 // pitch math
 //
 
-export const pitchToRatio = (pitch: PitchType, scale: number[], octaveSize: number): number => {
+export const pitchToRatio = (pitch: PitchType, context: Context): number => {
+    const {scale, octaveSize} = context;
     limit('Octave size', octaveSize, -20, 20);
 
     const {type} = pitch.value;
@@ -134,7 +135,7 @@ const pitchToHz = (pitch: PitchType, context: Context): number => {
         limit('Hz', hz, 0, 20000);
         return hz;
     }
-    return pitchToRatio(pitch, context.scale, context.octaveSize) * context.rootHz;
+    return pitchToRatio(pitch, context) * context.rootHz;
 };
 
 const tailToTime = (tail: TailType|undefined, context: Context): {time: number, timeEnd: number} => {
@@ -162,8 +163,6 @@ export const pitchToLabel = (pitch: PitchType, context: Context): string => {
 
     if(type === 'PitchRatio') {
         const {numerator, denominator} = pitch.value as PitchRatioType;
-        const ratio = numerator / denominator;
-        limit('Pitch ratio', ratio, 0, 100);
         return `${numerator}/${denominator}`;
     }
 
@@ -224,10 +223,13 @@ const noteToMosc = (note: NoteType, context: Context): MoscNote[] => {
     times.push(arr);
     note.time = arr;
 
+    const hz = pitchToHz(note.pitch, context);
+    const label = pitchToLabel(note.pitch, context);
+
     return [{
         type: 'NOTE_TIME',
-        hz: pitchToHz(note.pitch, context),
-        label: pitchToLabel(note.pitch, context),
+        hz,
+        label,
         ...timeProps
     }];
 };
@@ -244,10 +246,14 @@ const chordToMosc = (chord: ChordType|RatioChordType, context: Context): MoscNot
     const pitchTypes: MoscNote[] = pitches
         .filter((pitch): pitch is PitchType => pitch.type === 'Pitch')
         .map((pitch: any) => {
+
+            const hz = pitchToHz(pitch as PitchType, context);
+            const label = pitchToLabel(pitch as PitchType, context);
+
             return {
                 type: 'NOTE_TIME',
-                hz: pitchToHz(pitch as PitchType, context),
-                label: pitchToLabel(pitch as PitchType, context),
+                hz,
+                label,
                 ...timeProps
             };
         });
@@ -308,7 +314,7 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
             filteredPitches = degreePitches.map(value => ({value})) as PitchType[];
         }
 
-        context.scale = filteredPitches.map(pitch => pitchToRatio(pitch, context.scale, context.octaveSize));
+        context.scale = filteredPitches.map(pitch => pitchToRatio(pitch, context));
         context.scaleLabels = filteredPitches.map(pitch => pitchToLabel(pitch, context));
 
         if(scaleOctaveMarker) {
@@ -409,29 +415,55 @@ const setterToMosc = (setter: SetterType, context: Context): MoscItem[] => {
     return [];
 };
 
+const rulerStateCaptureRootHz = (initial: InitialRulerState, context: Context): InitialRulerState => {
+    if(initial.rootHz) {
+        return initial;
+    }
+    return {
+        ...initial,
+        rootHz: context.rootHz,
+        octaveSize: context.octaveSize
+    };
+};
+
+const rulerStateCaptureScale = (initial: InitialRulerState, context: Context): InitialRulerState => {
+    return {
+        ...initial,
+        scales: [...initial.scales, [context.scale, context.scaleLabels]]
+    };
+};
+
 export type InitialRulerState = {
     lowHz?: number;
     highHz?: number;
+    rootHz?: number;
+    octaveSize?: number;
+    scales: [number[], string[]][];
 };
 
-const setterToRulerState = (setter: SetterType, context: Context): InitialRulerState => {
+const setterToRulerState = (initial: InitialRulerState, setter: SetterType, context: Context): InitialRulerState => {
     const {type, delimiter} = setter;
 
-    if(delimiter) return {};
+    if(delimiter) return initial;
 
     if(type === 'SetRulerGrid') {
-        return {};
+        return initial;
     }
 
     if(type === 'SetRulerRange') {
+        if(initial.lowHz) {
+            return initial;
+        }
+
         const {low, high} = setter as SetRulerRangeType;
         return {
+            ...initial,
             lowHz: pitchToHz(low, context),
             highHz: pitchToHz(high, context)
         };
     }
 
-    return {};
+    return initial;
 };
 
 export type Processed = {
@@ -486,7 +518,9 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
     };
 
     const moscItems: MoscItem[] = [];
-    let initialRulerState: InitialRulerState|undefined = {};
+    let initialRulerState: InitialRulerState = {
+        scales: []
+    };
 
     grammarSequence.items.forEach((item): void => {
         const {type} = item;
@@ -497,6 +531,7 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
 
         if(type === 'SetScale') {
             setScale(item as SetScaleType, context);
+            initialRulerState = rulerStateCaptureScale(initialRulerState, context);
             return;
         }
 
@@ -508,6 +543,7 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
 
         if(type === 'Note') {
             moscItems.push(...noteToMosc(item as NoteType, context));
+            initialRulerState = rulerStateCaptureRootHz(initialRulerState, context);
             return;
         }
 
@@ -535,16 +571,15 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
         if(type === 'SetterGroup') {
             (item as SetterGroupType).setters.forEach(setter => {
                 moscItems.push(...setterToMosc(setter, context));
-                initialRulerState = {
-                    ...initialRulerState,
-                    ...setterToRulerState(setter, context)
-                };
+                initialRulerState = setterToRulerState(initialRulerState, setter, context);
             });
             return;
         }
 
         throw new Error(`Unknown sequence item "${type}"`);
     });
+
+    initialRulerState = rulerStateCaptureRootHz(initialRulerState, context);
 
     const sequence = [
         INITIAL_TEMPO,

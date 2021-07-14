@@ -1,4 +1,4 @@
-import React, {useCallback, useRef} from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import useDimensions from 'react-use-dimensions';
 import * as ReactKonva from 'react-konva';
 import {useStrictMode} from 'react-konva';
@@ -7,9 +7,10 @@ import type {Dendriform} from 'dendriform';
 import type {MoscNoteMs} from '@xenpaper/mosc';
 import {Box, Flex} from './layout/Layout';
 import styled from 'styled-components';
+import hsl from 'hsl-to-hex';
 
 useStrictMode(true);
-const {Stage, Layer, Rect, Group, Text} = ReactKonva as any;
+const {Stage, Layer, Rect, Group, Text, Line} = ReactKonva as any;
 
 export type RulerState = {
     notes: Map<string,MoscNoteMs>;
@@ -17,6 +18,9 @@ export type RulerState = {
     collect: boolean;
     viewPan: number;
     viewZoom: number;
+    rootHz?: number;
+    octaveSize?: number;
+    scales?: [number[], string[]][];
 };
 
 const LOW_HZ_LIMIT = 20;
@@ -37,15 +41,18 @@ const pxToPan = (px: number, viewPan: number, viewZoom: number, height: number):
 export type InitialRulerState = {
     lowHz?: number;
     highHz?: number;
+    rootHz?: number;
+    octaveSize?: number;
+    scales?: [number[], string[]][];
 };
 
-export function useRulerState({lowHz = 440, highHz = 880}: InitialRulerState = {}): Dendriform<RulerState> {
+export function useRulerState({lowHz, highHz, ...rest}: InitialRulerState = {}) {
     return useDendriform<RulerState>(() => {
 
-        let viewPan = hzToPan(440);
-        let viewZoom = 1;
+        let viewPan = hzToPan(440 * 1.5);
+        let viewZoom = 1.5;
 
-        if(lowHz) {
+        if(lowHz && highHz) {
             const lowPan = hzToPan(lowHz);
             const highPan = hzToPan(highHz);
             viewPan = (lowPan + highPan) * 0.5;
@@ -57,13 +64,14 @@ export function useRulerState({lowHz = 440, highHz = 880}: InitialRulerState = {
             notesActive: new Map(),
             collect: true,
             viewPan,
-            viewZoom
+            viewZoom,
+            ...rest
         };
     });
 };
 
 type Props = {
-    rulerState: Dendriform<RulerState>;
+    rulerState: Dendriform<RulerState,any>;
 };
 
 export function PitchRuler(props: Props): React.ReactElement|null {
@@ -106,8 +114,8 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
 
     const {viewPan, viewZoom} = rulerState;
 
-    const getY = (note: MoscNoteMs): number => {
-       return panToPx(hzToPan(note.hz), viewPan, viewZoom, height);
+    const getY = (hz: number): number => {
+       return panToPx(hzToPan(hz), viewPan, viewZoom, height);
     };
 
     const dragStartState = useRef<DragStartState|null>(null);
@@ -133,9 +141,13 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
         }
     }, [height]);
 
-    const handleMouseUp = useCallback(({evt}) => {
-        evt.preventDefault();
-        dragStartState.current = null;
+    useEffect(() => {
+        const onMouseUp = () => {
+            dragStartState.current = null;
+        };
+
+        window.addEventListener('mouseup', onMouseUp);
+        return () => window.removeEventListener('mouseup', onMouseUp);
     }, []);
 
     const handleWheel = useCallback(({evt}) => {
@@ -165,26 +177,38 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
     const ticksFrom = panToHz(pxToPan(height, viewPan, viewZoom, height));
     const ticksTo = panToHz(pxToPan(0, viewPan, viewZoom, height));
 
+    const {rootHz, octaveSize, scales} = rulerState;
+    console.log('scales', scales);
+
     return <div ref={dimensionsRef} style={{height: '100%', width: '100%', backgroundColor: '#080b0e'}}>
         <Stage
             width={width}
             height={height}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
             onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
         >
             <Layer>
+                {rootHz && octaveSize && [3,2,1,0,-1,-2,-3].map(i => {
+                    const y = getY(rootHz * Math.pow(octaveSize,i));
+                    return <Line
+                        key={i}
+                        stroke={hsl(0,0,(4 - Math.abs(i)) * 15)}
+                        strokeWidth={1}
+                        points={[0, y, width, y]}
+                        dash={[4,4]}
+                    />;
+                })}
                 {/*<Rect x={0} y={BASE_Y} width={width} height={1} fill="#000000" />*/}
-                {rulerState.collect && <NoteSet
-                    notes={rulerState.notes}
-                    getY={getY}
-                    color="#FF0000"
-                    width={width}
-                />}
+                {rulerState.collect &&
+                    <NoteSet
+                        notes={rulerState.notes}
+                        getY={getY}
+                        width={width}
+                    />
+                }
                 <NoteSet
                     notes={rulerState.notesActive}
                     getY={getY}
@@ -198,22 +222,29 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
 
 type NoteSetProps = {
     notes: Map<string,MoscNoteMs>;
-    getY: (note: MoscNoteMs) => number;
-    color: string;
+    getY: (hz: number) => number;
+    color?: string;
     width: number;
 };
 
 function NoteSet(props: NoteSetProps): React.ReactElement {
-    const {width, color} = props;
+    const {width, notes, getY} = props;
     return <>
-        {Array.from(props.notes.entries()).map(([id, note]) => {
-            return <Group key={id} y={props.getY(note)}>
-                <Rect
-                    width={width}
-                    height={1}
-                    fill={color}
+        {Array.from(notes.entries()).map(([id, note]) => {
+            const color = props.color ?? hsl(note.ms / 8, 100, 66);
+            return <Group key={id} y={getY(note.hz)}>
+                <Line
+                    stroke={color}
+                    strokeWidth={1}
+                    points={[50, 0, width, 0]}
                 />
-                <Text text={note.label} fill={color} />
+                <Text
+                    text={note.label}
+                    fill={color}
+                    align="right"
+                    width={45}
+                    y={-5}
+                />
             </Group>;
         })}
     </>;
