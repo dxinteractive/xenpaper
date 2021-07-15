@@ -336,7 +336,7 @@ type RootGridProps = {
     visibleRange: [number,number];
 };
 
-const ROOT_GRID_POSITIONS = [5,4,3,2,1,0,-1,-2,-3,-4,-5];
+const ROOT_GRID_POSITIONS = [7,6,5,4,3,2,1,0,-1,-2,-3];
 
 const RootGrid = React.memo(function RootGrid(props: RootGridProps): React.ReactElement {
     const {getY, rootHz, octaveSize, width, visibleRange} = props;
@@ -350,14 +350,14 @@ const RootGrid = React.memo(function RootGrid(props: RootGridProps): React.React
             const y = getY(hz);
             return <Group key={i} y={y}>
                 <Line
-                    stroke={hsl(208, 32, (6 - Math.abs(i)) * 12)}
+                    stroke={hsl(208, 32, (8 - Math.abs(i)) * 12)}
                     strokeWidth={1}
                     points={[0, 0, width - 60, 0]}
                     dash={[4,4]}
                 />
                 <Text
                     text={`${hz}Hz`}
-                    fill={hsl(208, 32, (6 - Math.abs(i)) * 24)}
+                    fill={hsl(208, 32, (8 - Math.abs(i)) * 24)}
                     align="left"
                     width={55}
                     x={width - 55}
