@@ -55,7 +55,7 @@ export type InitialRulerState = {
 export function useRulerState({lowHz, highHz, ...rest}: InitialRulerState = {}) {
     return useDendriform<RulerState>(() => {
 
-        let viewPan = hzToPan(440 * 1.5);
+        let viewPan = hzToPan(220 * 1.5);
         let viewZoom = 1.5;
 
         if(lowHz && highHz) {

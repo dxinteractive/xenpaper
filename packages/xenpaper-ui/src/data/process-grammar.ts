@@ -538,7 +538,7 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
     const scale = edoToRatios(12, 2);
 
     const context: Context = {
-        rootHz: 440,
+        rootHz: 220,
         time: 0,
         subdivision: 0.5,
         scale,

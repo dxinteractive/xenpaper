@@ -64,7 +64,7 @@ export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
             <br />- as divisions of an octave <C>11{'\\'}19</C>,
             <br />- as divisions of an octave with a specific size (e.g. 3) <C>5{'\\'}13o3</C>
             <br />- as cycles per second <C>432Hz</C>
-            <Ex tune={"0 7 1/1 3/2 0c 702c\n0\\19 11\\19 440Hz 660Hz"} color="pitch" onSetTune={onSetTune} />
+            <Ex tune={"0 7 1/1 3/2 0c 702c\n0\\19 11\\19 220Hz 330Hz"} color="pitch" onSetTune={onSetTune} />
         </B>
         <B>Notes can be shifted up or down octaves. <C>{"'"}</C> shifts the following note up 1 octave, <C>"</C> shifts the following note up 2 octaves, and <C>`</C> shifts the following note down an octave.
             <Ex tune={"0-3-'0-'3-\"0-'\"0-`0-``0-"} color="pitch" onSetTune={onSetTune} />
