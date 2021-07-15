@@ -1682,17 +1682,17 @@ describe('grammar', () => {
                 ]);
             });
 
-            it('should parse sequence with ruler grid', () => {
-                expect(strip(parser('(rl:grid)')).sequence.items).toEqual([
+            it('should parse sequence with ruler plot', () => {
+                expect(strip(parser('(plot)')).sequence.items).toEqual([
                     {
                         type: 'SetterGroup',
                         setters: [
                             {
-                                type: 'SetRulerGrid',
-                                len: 7
+                                type: 'SetRulerPlot',
+                                len: 4
                             }
                         ],
-                        len: 9
+                        len: 6
                     }
                 ]);
             });

@@ -278,6 +278,14 @@ export function XenpaperApp(props: Props): React.ReactElement {
         });
     }, []);
 
+    parsedForm.branch('initialRulerState').useChange((initialRulerState) => {
+        rulerState.set(draft => {
+            draft.rootHz = initialRulerState?.rootHz;
+            draft.octaveSize = initialRulerState?.octaveSize;
+            draft.plots = initialRulerState?.plots;
+        });
+    });
+
     //
     // sound engine callbacks
     //
@@ -391,7 +399,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
     const sidebarToggles = <>
         <SideButton onClick={toggleSidebarInfo}>Info</SideButton>
         <SideButton onClick={toggleSidebarShare}>Share</SideButton>
-        {/*<SideButton onClick={toggleSidebarRuler}>Ruler</SideButton>*/}
+        <SideButton onClick={toggleSidebarRuler}>Ruler</SideButton>
     </>;
 
     const sidebar = <>

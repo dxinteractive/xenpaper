@@ -1,4 +1,4 @@
-import {centsToRatio, octaveDivisionToRatio, sortByTime, scoreToMs} from '../mosc';
+import {centsToRatio, octaveDivisionToRatio, ratioToCents, ratioToOctaveDivision, sortByTime, scoreToMs} from '../mosc';
 
 describe('centsToRatio', () => {
     it('should convert cent to ratio', () => {
@@ -21,6 +21,29 @@ describe('octaveDivisionToRatio', () => {
         expect(octaveDivisionToRatio(6, 6, 2)).toBe(2);
         expect(octaveDivisionToRatio(12, 6, 2)).toBe(4);
         expect(octaveDivisionToRatio(0, 6, 2, 2)).toBe(4);
+    });
+});
+
+describe('ratioToCents', () => {
+    it('should convert cent to ratio', () => {
+        expect(ratioToCents(1)).toBe(0);
+        expect(ratioToCents(0.5)).toBe(-1200);
+        expect(ratioToCents(2)).toBe(1200);
+        expect(ratioToCents(4)).toBe(2400);
+    });
+
+    it('should convert cent to ratio with octave', () => {
+        expect(ratioToCents(2, 1)).toBe(0);
+        expect(ratioToCents(4, 2)).toBe(0);
+    });
+});
+
+describe('ratioToOctaveDivision', () => {
+    it('should ratio to octave division', () => {
+        expect(ratioToOctaveDivision(1.2599210498948732, 12, 2)).toBe(4);
+        expect(ratioToOctaveDivision(2, 6, 2)).toBe(6);
+        expect(ratioToOctaveDivision(4, 6, 2)).toBe(12);
+        expect(ratioToOctaveDivision(4, 6, 2, 2)).toBe(0);
     });
 });
 

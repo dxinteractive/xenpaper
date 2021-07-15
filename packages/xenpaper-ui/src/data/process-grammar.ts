@@ -33,6 +33,7 @@ import type {
     MoscScore,
     MoscItem,
     MoscNote,
+    MoscNoteMs,
     MoscTempo,
     MoscParam,
     MoscEnd
@@ -41,7 +42,8 @@ import type {
 import {
     centsToRatio,
     octaveDivisionToRatio,
-    timeToMs
+    timeToMs,
+    ratioToCents
 } from '@xenpaper/mosc';
 
 //
@@ -58,7 +60,8 @@ const limit = (name: string, value: number, min: number, max: number): void => {
 // pitch math
 //
 
-export const pitchToRatio = (pitch: PitchType, scale: number[], octaveSize: number): number => {
+export const pitchToRatio = (pitch: PitchType, context: Context): number => {
+    const {scale, octaveSize} = context;
     limit('Octave size', octaveSize, -20, 20);
 
     const {type} = pitch.value;
@@ -134,7 +137,7 @@ const pitchToHz = (pitch: PitchType, context: Context): number => {
         limit('Hz', hz, 0, 20000);
         return hz;
     }
-    return pitchToRatio(pitch, context.scale, context.octaveSize) * context.rootHz;
+    return pitchToRatio(pitch, context) * context.rootHz;
 };
 
 const tailToTime = (tail: TailType|undefined, context: Context): {time: number, timeEnd: number} => {
@@ -157,14 +160,26 @@ const tailToTime = (tail: TailType|undefined, context: Context): {time: number, 
 // labels
 //
 
+const ratioWrap = (ratio: number, octaveSize: number): number => {
+    while(ratio < 1) {
+        ratio *= octaveSize;
+    }
+    while(ratio > octaveSize) {
+        ratio /= octaveSize;
+    }
+    return ratio;
+};
+
+const ratioToCentsLabel = (ratio: number, octaveSize: number): string => {
+    return `${ratioToCents(ratioWrap(ratio, octaveSize)).toFixed(1)}c`;
+};
+
 export const pitchToLabel = (pitch: PitchType, context: Context): string => {
     const {type} = pitch.value;
 
-    if(type === 'PitchRatio') {
-        const {numerator, denominator} = pitch.value as PitchRatioType;
-        const ratio = numerator / denominator;
-        limit('Pitch ratio', ratio, 0, 100);
-        return `${numerator}/${denominator}`;
+    if(type === 'PitchHz') {
+        const {hz} = pitch.value as PitchHzType;
+        return `${hz}Hz`;
     }
 
     if(type === 'PitchCents') {
@@ -172,9 +187,16 @@ export const pitchToLabel = (pitch: PitchType, context: Context): string => {
         return `${cents}c`;
     }
 
+    const centsLabel = ratioToCentsLabel(pitchToRatio(pitch, context), context.octaveSize);
+
+    if(type === 'PitchRatio') {
+        const {numerator, denominator} = pitch.value as PitchRatioType;
+        return `${numerator}/${denominator}  ${centsLabel}`;
+    }
+
     if(type === 'PitchOctaveDivision') {
         const {numerator, denominator} = pitch.value as PitchOctaveDivisionType;
-        return `${numerator}\\${denominator}`;
+        return `${numerator}\\${denominator}  ${centsLabel}`;
     }
 
     if(type === 'PitchDegree') {
@@ -183,18 +205,14 @@ export const pitchToLabel = (pitch: PitchType, context: Context): string => {
         return context.scaleLabels[wrappedDegree];
     }
 
-    if(type === 'PitchHz') {
-        const {hz} = pitch.value as PitchHzType;
-        return `${hz}Hz`;
-    }
-
     throw new Error(`Unknown pitch type "${type}"`);
 };
 
-const edoToLabels = (edoSize: number): string[] => {
+const edoToLabels = (edoSize: number, ratios: number[], octaveSize: number): string[] => {
     const labels: string[] = [];
     for(let i = 0; i < edoSize; i++) {
-        labels.push(`${i}\\${edoSize}`);
+        const centsLabel = ratioToCentsLabel(ratios[i], octaveSize);
+        labels.push(`${i}\\${edoSize}  ${centsLabel}`);
     }
     return labels;
 };
@@ -224,10 +242,13 @@ const noteToMosc = (note: NoteType, context: Context): MoscNote[] => {
     times.push(arr);
     note.time = arr;
 
+    const hz = pitchToHz(note.pitch, context);
+    const label = pitchToLabel(note.pitch, context);
+
     return [{
         type: 'NOTE_TIME',
-        hz: pitchToHz(note.pitch, context),
-        label: pitchToLabel(note.pitch, context),
+        hz,
+        label,
         ...timeProps
     }];
 };
@@ -244,10 +265,14 @@ const chordToMosc = (chord: ChordType|RatioChordType, context: Context): MoscNot
     const pitchTypes: MoscNote[] = pitches
         .filter((pitch): pitch is PitchType => pitch.type === 'Pitch')
         .map((pitch: any) => {
+
+            const hz = pitchToHz(pitch as PitchType, context);
+            const label = pitchToLabel(pitch as PitchType, context);
+
             return {
                 type: 'NOTE_TIME',
-                hz: pitchToHz(pitch as PitchType, context),
-                label: pitchToLabel(pitch as PitchType, context),
+                hz,
+                label,
                 ...timeProps
             };
         });
@@ -264,7 +289,7 @@ const chordToMosc = (chord: ChordType|RatioChordType, context: Context): MoscNot
             return {
                 type: 'NOTE_TIME',
                 hz: numerator / denominator * context.rootHz,
-                label: `${numerator}/${denominator}`,
+                label: `${numerator}/${denominator}  ${ratioToCentsLabel(numerator / denominator, context.octaveSize)}`,
                 ...timeProps
             };
         });
@@ -308,7 +333,7 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
             filteredPitches = degreePitches.map(value => ({value})) as PitchType[];
         }
 
-        context.scale = filteredPitches.map(pitch => pitchToRatio(pitch, context.scale, context.octaveSize));
+        context.scale = filteredPitches.map(pitch => pitchToRatio(pitch, context));
         context.scaleLabels = filteredPitches.map(pitch => pitchToLabel(pitch, context));
 
         if(scaleOctaveMarker) {
@@ -322,7 +347,7 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
     if(type === 'EdoScale') {
         const {divisions, octaveSize} = scale as EdoScaleType;
         context.scale = edoToRatios(divisions, octaveSize);
-        context.scaleLabels = edoToLabels(divisions);
+        context.scaleLabels = edoToLabels(divisions, context.scale, octaveSize);
         context.octaveSize = octaveSize;
         return;
     }
@@ -335,7 +360,10 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
             .map(pitch => pitch.pitch);
 
         context.scale = ratios.map(ratio => ratio / ratios[0]);
-        context.scaleLabels = ratios.map(ratio => `${ratio}/${ratios[0]}`);
+        context.scaleLabels = ratios.map(ratio => {
+            const centsLabel = ratioToCentsLabel(ratio/ratios[0], 2);
+            return `${ratio}/${ratios[0]}  ${centsLabel}`;
+        });
 
         if(scaleOctaveMarker) {
             context.octaveSize = context.scale.pop() || 2;
@@ -409,29 +437,60 @@ const setterToMosc = (setter: SetterType, context: Context): MoscItem[] => {
     return [];
 };
 
+const rulerStateCaptureRootHz = (initial: InitialRulerState, context: Context): InitialRulerState => {
+    if(initial.rootHz) {
+        return initial;
+    }
+    return {
+        ...initial,
+        rootHz: context.rootHz,
+        octaveSize: context.octaveSize
+    };
+};
+
 export type InitialRulerState = {
     lowHz?: number;
     highHz?: number;
+    rootHz?: number;
+    octaveSize?: number;
+    plots: MoscNoteMs[][];
 };
 
-const setterToRulerState = (setter: SetterType, context: Context): InitialRulerState => {
+const setterToRulerState = (initial: InitialRulerState, setter: SetterType, context: Context): InitialRulerState => {
     const {type, delimiter} = setter;
 
-    if(delimiter) return {};
+    if(delimiter) return initial;
 
-    if(type === 'SetRulerGrid') {
-        return {};
+    if(type === 'SetRulerPlot') {
+
+        const newPlot = context.scale.map((ratio, i): MoscNoteMs => ({
+            type: 'NOTE_MS',
+            ms: context.time,
+            msEnd: context.time,
+            hz: ratio * context.rootHz,
+            label: context.scaleLabels[i]
+        }));
+
+        return {
+            ...initial,
+            plots: [...initial.plots, newPlot]
+        };
     }
 
     if(type === 'SetRulerRange') {
+        if(initial.lowHz) {
+            return initial;
+        }
+
         const {low, high} = setter as SetRulerRangeType;
         return {
+            ...initial,
             lowHz: pitchToHz(low, context),
             highHz: pitchToHz(high, context)
         };
     }
 
-    return {};
+    return initial;
 };
 
 export type Processed = {
@@ -476,17 +535,21 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
         }
     };
 
+    const scale = edoToRatios(12, 2);
+
     const context: Context = {
-        rootHz: 440,
+        rootHz: 220,
         time: 0,
         subdivision: 0.5,
-        scale: edoToRatios(12, 2),
-        scaleLabels: edoToLabels(12),
+        scale,
+        scaleLabels: edoToLabels(12, scale, 2),
         octaveSize: 2
     };
 
     const moscItems: MoscItem[] = [];
-    let initialRulerState: InitialRulerState|undefined = {};
+    let initialRulerState: InitialRulerState = {
+        plots: []
+    };
 
     grammarSequence.items.forEach((item): void => {
         const {type} = item;
@@ -508,6 +571,7 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
 
         if(type === 'Note') {
             moscItems.push(...noteToMosc(item as NoteType, context));
+            initialRulerState = rulerStateCaptureRootHz(initialRulerState, context);
             return;
         }
 
@@ -529,22 +593,22 @@ export const processGrammar = (grammar: XenpaperAST): Processed => {
 
         if(type === 'RatioChord') {
             moscItems.push(...chordToMosc(item as RatioChordType, context));
+            initialRulerState = rulerStateCaptureRootHz(initialRulerState, context);
             return;
         }
 
         if(type === 'SetterGroup') {
             (item as SetterGroupType).setters.forEach(setter => {
                 moscItems.push(...setterToMosc(setter, context));
-                initialRulerState = {
-                    ...initialRulerState,
-                    ...setterToRulerState(setter, context)
-                };
+                initialRulerState = setterToRulerState(initialRulerState, setter, context);
             });
             return;
         }
 
         throw new Error(`Unknown sequence item "${type}"`);
     });
+
+    initialRulerState = rulerStateCaptureRootHz(initialRulerState, context);
 
     const sequence = [
         INITIAL_TEMPO,

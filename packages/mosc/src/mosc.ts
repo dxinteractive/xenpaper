@@ -73,6 +73,14 @@ export const octaveDivisionToRatio = (steps: number, stepsInOctave: number, octa
     return Math.pow(octaveSize, (steps + (octave * stepsInOctave)) / stepsInOctave);
 };
 
+export const ratioToCents = (ratio: number, octave: number = 0): number => {
+    return ratioToOctaveDivision(ratio, 1200, 2, octave);
+};
+
+export const ratioToOctaveDivision = (ratio: number, stepsInOctave: number, octaveSize: number, octave: number = 0): number => {
+    return (Math.log(ratio) / Math.log(octaveSize) * stepsInOctave) - (octave * stepsInOctave);
+};
+
 export const sortByTime = <T extends {time: number}>(items: T[]): T[] => {
     return items.slice().sort((a, b) => {
         if(a.time < b.time) return -1;
