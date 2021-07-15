@@ -1,3 +1,3 @@
 # xenpaper
 
-Repo for [xenpaper.com](xenpaper.com).
+Repo for [xenpaper.com](https://xenpaper.com).
