@@ -474,7 +474,7 @@ const setterToRulerState = (initial: InitialRulerState, setter: SetterType, cont
         return {
             ...initial,
             plots: [...initial.plots, newPlot]
-        }
+        };
     }
 
     if(type === 'SetRulerRange') {
