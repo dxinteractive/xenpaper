@@ -412,7 +412,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
             return <SidebarShare setSidebar={setSidebar} url={url} urlEmbed={urlEmbed} />;
         })}
         {sidebarState === 'ruler' &&
-            <Sidebar setSidebar={setSidebar} title="Pitch ruler">
+            <Sidebar setSidebar={setSidebar} title="Pitch ruler" desc="Click and drag to pan, use mousewheel to zoom.">
                 <PitchRuler rulerState={rulerState} />
             </Sidebar>
         }

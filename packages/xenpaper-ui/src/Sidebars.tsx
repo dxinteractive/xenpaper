@@ -207,11 +207,12 @@ type SidebarProps = {
     setSidebar: (open: SidebarState) => void;
     children: React.ReactNode;
     title?: string;
+    desc?: string;
     pad?: boolean;
 };
 
 export const Sidebar = (props: SidebarProps): React.ReactElement => {
-    const {setSidebar, children, title, pad} = props;
+    const {setSidebar, children, title, desc, pad} = props;
     return <TextPanel width={['100rem', '20rem', '30rem', '40%']} flexDirection="column" flexShrink="0" minHeight="0">
         <Box position={["absolute", "fixed"]} top={0} right={0} pt={3} pr={3}>
             <IconToggle
@@ -227,6 +228,9 @@ export const Sidebar = (props: SidebarProps): React.ReactElement => {
         <LogoArea>
             {title &&
                 <Hsize>{title}</Hsize>
+            }
+            {desc &&
+                <Text as="div" color="text.placeholder" style={{fontStyle: "italic", lineHeight: '1.3rem'}}>{desc}</Text>
             }
             {!title &&
                 <Flex alignItems="center">
@@ -292,6 +296,7 @@ const H = styled.h2`
 
 const Hsize = styled.h2`
     font-size: 1.5rem;
+    margin-bottom: .25rem;
 `;
 
 const C = styled.span`
