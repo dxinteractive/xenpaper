@@ -605,19 +605,19 @@ export const SetRulerRange = node/*<SetRulerRangeType>*/(
     })
 );
 
-export type SetRulerGridType = NodeType;
+export type SetRulerPlotType = NodeType;
 
-export const SetRulerGrid = node/*<SetRulerGridType>*/(
-    'SetRulerGrid',
-    /^(rl:grid)/,
-    ([str]: [string]) => ({
-        len: str.length
+export const SetRulerPlot = node/*<SetRulerPlotType>*/(
+    'SetRulerPlot',
+    'plot',
+    () => ({
+        len: 4
     })
 );
 
-export type SetRulerType = SetRulerRangeType|SetRulerGridType;
+export type SetRulerType = SetRulerRangeType|SetRulerPlotType;
 
-export const SetRuler = Any(SetRulerRange, SetRulerGrid);
+export const SetRuler = Any(SetRulerRange, SetRulerPlot);
 
 // setters
 

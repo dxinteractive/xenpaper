@@ -74,28 +74,28 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 0.5,
                     hz: 440,
-                    label: '1/1'
+                    label: '1/1  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0.5,
                     timeEnd: 1,
                     hz: 550,
-                    label: '5/4'
+                    label: '5/4  386.3c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 1.5,
                     hz: 660,
-                    label: '3/2'
+                    label: '3/2  702.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1.5,
                     timeEnd: 2,
                     hz: 880,
-                    label: '2/1'
+                    label: '2/1  1200.0c'
                 },
                 // pitch cents
                 {
@@ -161,7 +161,7 @@ describe('grammar to mosc score', () => {
                     time: 6,
                     timeEnd: 6.5,
                     hz: 440,
-                    label: '0\\4'
+                    label: '0\\4  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
@@ -169,7 +169,7 @@ describe('grammar to mosc score', () => {
                     timeEnd: 7,
                     // @ts-ignore
                     hz: expect.toBeAround(523.2511306011972),
-                    label: '1\\4'
+                    label: '1\\4  300.0c'
                 },
                 {
                     type: 'NOTE_TIME',
@@ -177,7 +177,7 @@ describe('grammar to mosc score', () => {
                     timeEnd: 7.5,
                     // @ts-ignore
                     hz: expect.toBeAround(622.2539674441618),
-                    label: '2\\4'
+                    label: '2\\4  600.0c'
                 },
                 {
                     type: 'NOTE_TIME',
@@ -185,7 +185,7 @@ describe('grammar to mosc score', () => {
                     timeEnd: 8,
                     // @ts-ignore
                     hz: expect.toBeAround(739.9888454232688),
-                    label: '3\\4'
+                    label: '3\\4  900.0c'
                 },
                 {
                     type: 'END_TIME',
@@ -222,28 +222,28 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 0.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0.5,
                     timeEnd: 1,
                     hz: 554.3652619537442,
-                    label: '4\\12'
+                    label: '4\\12  400.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 1.5,
                     hz: 659.2551138257398,
-                    label: '7\\12'
+                    label: '7\\12  700.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1.5,
                     timeEnd: 2,
                     hz: 880,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 // ratios scale
                 {
@@ -251,28 +251,28 @@ describe('grammar to mosc score', () => {
                     time: 2,
                     timeEnd: 2.5,
                     hz: 440,
-                    label: '1/1'
+                    label: '1/1  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 2.5,
                     timeEnd: 3,
                     hz: 550,
-                    label: '5/4'
+                    label: '5/4  386.3c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 3,
                     timeEnd: 3.5,
                     hz: 660,
-                    label: '3/2'
+                    label: '3/2  702.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 3.5,
                     timeEnd: 4,
                     hz: 880,
-                    label: '2/1'
+                    label: '2/1  1200.0c'
                 },
                 // 19edo scale
                 {
@@ -280,28 +280,28 @@ describe('grammar to mosc score', () => {
                     time: 4,
                     timeEnd: 4.5,
                     hz: 440,
-                    label: '0\\19'
+                    label: '0\\19  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 4.5,
                     timeEnd: 5,
                     hz: 547.6647393641703,
-                    label: '6\\19'
+                    label: '6\\19  378.9c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 5,
                     timeEnd: 5.5,
                     hz: 657.2539431279737,
-                    label: '11\\19'
+                    label: '11\\19  694.7c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 5.5,
                     timeEnd: 6,
                     hz: 880,
-                    label: '0\\19'
+                    label: '0\\19  0.0c'
                 },
                 // multi ratio scale
                 {
@@ -309,28 +309,28 @@ describe('grammar to mosc score', () => {
                     time: 6,
                     timeEnd: 6.5,
                     hz: 440,
-                    label: '4/4'
+                    label: '4/4  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 6.5,
                     timeEnd: 7,
                     hz: 550,
-                    label: '5/4'
+                    label: '5/4  386.3c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 7,
                     timeEnd: 7.5,
                     hz: 660,
-                    label: '6/4'
+                    label: '6/4  702.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 7.5,
                     timeEnd: 8,
                     hz: 880,
-                    label: '8/4'
+                    label: '8/4  1200.0c'
                 },
                 {
                     type: 'END_TIME',
@@ -357,49 +357,49 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 0.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0.5,
                     timeEnd: 1,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 2,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 2,
                     timeEnd: 3,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 3,
                     timeEnd: 3.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 4,
                     timeEnd: 5.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 6,
                     timeEnd: 6.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'END_TIME',
@@ -432,63 +432,63 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 0.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0.5,
                     timeEnd: 1,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 1.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1.5,
                     timeEnd: 2.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 2.5,
                     timeEnd: 3.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 3.5,
                     timeEnd: 4.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 4.5,
                     timeEnd: 4.75,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 4.75,
                     timeEnd: 5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 5,
                     timeEnd: 5.25,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'END_TIME',
@@ -518,14 +518,14 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 0.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0.5,
                     timeEnd: 1,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'TEMPO',
@@ -538,14 +538,14 @@ describe('grammar to mosc score', () => {
                     time: 1,
                     timeEnd: 1.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1.5,
                     timeEnd: 2,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'END_TIME',
@@ -575,14 +575,14 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 0.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0.5,
                     timeEnd: 1,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'TEMPO',
@@ -595,14 +595,14 @@ describe('grammar to mosc score', () => {
                     time: 1,
                     timeEnd: 1.5,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1.5,
                     timeEnd: 2,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'END_TIME',
@@ -629,49 +629,49 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 1,
                     hz: 440,
-                    label: '0\\12'
+                    label: '0\\12  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0,
                     timeEnd: 1,
                     hz: 554.3652619537442,
-                    label: '4\\12'
+                    label: '4\\12  400.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0,
                     timeEnd: 1,
                     hz: 659.2551138257398,
-                    label: '7\\12'
+                    label: '7\\12  700.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 2,
                     hz: 493.8833012561241,
-                    label: '2\\12'
+                    label: '2\\12  200.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 2,
                     hz: 698.4564628660078,
-                    label: '8\\12'
+                    label: '8\\12  800.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 2,
                     hz: 830.6093951598903,
-                    label: '11\\12'
+                    label: '11\\12  1100.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 2,
                     hz: 932.3275230361799,
-                    label: '1\\12'
+                    label: '1\\12  100.0c'
                 },
                 {
                     type: 'END_TIME',
@@ -698,28 +698,28 @@ describe('grammar to mosc score', () => {
                     time: 0,
                     timeEnd: 1,
                     hz: 440,
-                    label: '4/4'
+                    label: '4/4  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 0,
                     timeEnd: 1,
                     hz: 550,
-                    label: '5/4'
+                    label: '5/4  386.3c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 2,
                     hz: 440,
-                    label: '4/4'
+                    label: '4/4  0.0c'
                 },
                 {
                     type: 'NOTE_TIME',
                     time: 1,
                     timeEnd: 2,
                     hz: 550,
-                    label: '5/4'
+                    label: '5/4  386.3c'
                 },
                 {
                     type: 'END_TIME',
@@ -742,7 +742,10 @@ describe('grammar to ruler state', () => {
     it('should translate ruler range', () => {
         expect(processGrammar(RULER_RANGE_TEST).initialRulerState).toEqual({
             lowHz: 440,
-            highHz: 880
+            highHz: 880,
+            octaveSize: 2,
+            plots: [],
+            rootHz: 440
         });
     });
 });

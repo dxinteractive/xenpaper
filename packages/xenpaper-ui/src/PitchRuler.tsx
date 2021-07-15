@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import useDimensions from 'react-use-dimensions';
 import * as ReactKonva from 'react-konva';
 import {useStrictMode} from 'react-konva';
@@ -8,6 +8,8 @@ import type {MoscNoteMs} from '@xenpaper/mosc';
 import {Box, Flex} from './layout/Layout';
 import styled from 'styled-components';
 import hsl from 'hsl-to-hex';
+
+import {centsToRatio} from '@xenpaper/mosc';
 
 useStrictMode(true);
 const {Stage, Layer, Rect, Group, Text, Line} = ReactKonva as any;
@@ -20,7 +22,7 @@ export type RulerState = {
     viewZoom: number;
     rootHz?: number;
     octaveSize?: number;
-    scales?: [number[], string[]][];
+    plots?: MoscNoteMs[][];
 };
 
 const LOW_HZ_LIMIT = 20;
@@ -38,12 +40,16 @@ const pxToPan = (px: number, viewPan: number, viewZoom: number, height: number):
     return viewPan - ((px - (height * 0.5)) / height * viewZoom);
 };
 
+const hzInRange = (hz: number, [lowHz, highHz]: [number,number]) => {
+    return hz >= lowHz && hz <= highHz;
+};
+
 export type InitialRulerState = {
     lowHz?: number;
     highHz?: number;
     rootHz?: number;
     octaveSize?: number;
-    scales?: [number[], string[]][];
+    plots?: MoscNoteMs[][];
 };
 
 export function useRulerState({lowHz, highHz, ...rest}: InitialRulerState = {}) {
@@ -114,11 +120,12 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
 
     const {viewPan, viewZoom} = rulerState;
 
-    const getY = (hz: number): number => {
+    const getY = useCallback((hz: number): number => {
        return panToPx(hzToPan(hz), viewPan, viewZoom, height);
-    };
+    }, [viewPan, viewZoom, height]);
 
     const dragStartState = useRef<DragStartState|null>(null);
+    const [dragging, setDragging] = useState<boolean>(false);
 
     const handleMouseDown = useCallback(({evt}) => {
         evt.preventDefault();
@@ -127,6 +134,7 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
             startZoom: viewZoom,
             startDrag: pxToPan(evt.clientY, viewPan, viewZoom, height)
         };
+        setDragging(true);
     }, [viewPan, viewZoom, height]);
 
     const handleMouseMove = useCallback(({evt}) => {
@@ -144,6 +152,7 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
     useEffect(() => {
         const onMouseUp = () => {
             dragStartState.current = null;
+            setDragging(false);
         };
 
         window.addEventListener('mouseup', onMouseUp);
@@ -174,13 +183,23 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
 
     // TODO zoom toward cursor position
 
-    const ticksFrom = panToHz(pxToPan(height, viewPan, viewZoom, height));
-    const ticksTo = panToHz(pxToPan(0, viewPan, viewZoom, height));
+    const visibleRange: [number,number] = [
+        panToHz(pxToPan(height, viewPan, viewZoom, height)),
+        panToHz(pxToPan(0, viewPan, viewZoom, height))
+    ];
 
-    const {rootHz, octaveSize, scales} = rulerState;
-    console.log('scales', scales);
+    const {rootHz, octaveSize, plots = [], notes, notesActive} = rulerState;
+    const total = plots.length + 1;
+    const noteSetWidth = (width - 60) / total;
 
-    return <div ref={dimensionsRef} style={{height: '100%', width: '100%', backgroundColor: '#080b0e'}}>
+    const style = {
+        height: '100%',
+        width: '100%',
+        backgroundColor: '#080b0e',
+        cursor: dragging ? 'grabbing' : 'grab'
+    };
+
+    return <div ref={dimensionsRef} style={style}>
         <Stage
             width={width}
             height={height}
@@ -191,64 +210,101 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
             onTouchMove={handleTouchMove}
         >
             <Layer>
-                {rootHz && octaveSize && [3,2,1,0,-1,-2,-3].map(i => {
-                    const y = getY(rootHz * Math.pow(octaveSize,i));
-                    return <Line
-                        key={i}
-                        stroke={hsl(0,0,(4 - Math.abs(i)) * 15)}
-                        strokeWidth={1}
-                        points={[0, y, width, y]}
-                        dash={[4,4]}
-                    />;
-                })}
-                {/*<Rect x={0} y={BASE_Y} width={width} height={1} fill="#000000" />*/}
-                {rulerState.collect &&
-                    <NoteSet
-                        notes={rulerState.notes}
+                {rootHz && octaveSize &&
+                    <CentsGrid
+                        rootHz={rootHz}
+                        octaveSize={octaveSize}
                         getY={getY}
                         width={width}
+                        visibleRange={visibleRange}
                     />
                 }
+                {rootHz && octaveSize &&
+                    <RootGrid
+                        rootHz={rootHz}
+                        octaveSize={octaveSize}
+                        getY={getY}
+                        width={width}
+                        visibleRange={visibleRange}
+                    />
+                }
+                {rulerState.collect &&
+                    <NoteSet
+                        notes={Array.from(notes.values())}
+                        getY={getY}
+                        width={noteSetWidth}
+                        x={0}
+                        visibleRange={visibleRange}
+                    />
+                }
+                {(plots || []).map((plot, index) => {
+                    return <NoteSet
+                        key={index}
+                        notes={plot}
+                        getY={getY}
+                        width={noteSetWidth}
+                        x={noteSetWidth * (index + 1)}
+                        visibleRange={visibleRange}
+                    />
+                })}
                 <NoteSet
-                    notes={rulerState.notesActive}
+                    notes={Array.from(notesActive.values())}
                     getY={getY}
                     color="#FFFFFF"
-                    width={width}
+                    width={noteSetWidth}
+                    x={0}
+                    visibleRange={visibleRange}
                 />
             </Layer>
         </Stage>
     </div>;
 }
 
+
+// this is so completely stupid
+// and doesnt even work with non 2x octave sizes
+// but i'm done with this
+const getColorFromLabel = (label: string): number => {
+    const matched = label.match(/([\d.]+)c/);
+    if(!matched) return 0;
+    const hue = Math.floor(Number(matched[1]) / 1200 * 360 + 180);
+    return hue;
+};
+
 type NoteSetProps = {
-    notes: Map<string,MoscNoteMs>;
+    notes: MoscNoteMs[];
     getY: (hz: number) => number;
     color?: string;
     width: number;
+    x: number;
+    visibleRange: [number,number];
 };
 
-function NoteSet(props: NoteSetProps): React.ReactElement {
-    const {width, notes, getY} = props;
+const NoteSet = React.memo(function NoteSet(props: NoteSetProps): React.ReactElement {
+    const {width, notes, getY, x, visibleRange} = props;
+
+    const visibleNotes = notes.filter(note => hzInRange(note.hz, visibleRange));
+
     return <>
-        {Array.from(notes.entries()).map(([id, note]) => {
-            const color = props.color ?? hsl(note.ms / 8, 100, 66);
-            return <Group key={id} y={getY(note.hz)}>
+        {visibleNotes.map((note, index) => {
+            const color = props.color ?? hsl(getColorFromLabel(note.label), 100, 66);
+            return <Group key={index} x={x} y={getY(note.hz)}>
                 <Line
                     stroke={color}
                     strokeWidth={1}
-                    points={[50, 0, width, 0]}
+                    points={[0, 0, width, 0]}
                 />
                 <Text
                     text={note.label}
                     fill={color}
-                    align="right"
-                    width={45}
-                    y={-5}
+                    align="center"
+                    width={width}
+                    y={-13}
                 />
             </Group>;
         })}
     </>;
-}
+});
 
 const Label = styled.label`
     user-select: none;
@@ -271,3 +327,91 @@ const Button = styled.button`
         opacity: 1;
     }
 `;
+
+type RootGridProps = {
+    octaveSize: number;
+    rootHz: number;
+    width: number;
+    getY: (hz: number) => number;
+    visibleRange: [number,number];
+};
+
+const ROOT_GRID_POSITIONS = [5,4,3,2,1,0,-1,-2,-3,-4,-5];
+
+const RootGrid = React.memo(function RootGrid(props: RootGridProps): React.ReactElement {
+    const {getY, rootHz, octaveSize, width, visibleRange} = props;
+
+    const lines = ROOT_GRID_POSITIONS
+        .map(i => [i, rootHz * Math.pow(octaveSize,i)])
+        .filter(([,hz]) => hzInRange(hz, visibleRange));
+
+    return <>
+        {lines.map(([i, hz]) => {
+            const y = getY(hz);
+            const color = hsl(208, 32, (6 - Math.abs(i)) * 12);
+            return <Group key={i} y={y}>
+                <Line
+                    stroke={color}
+                    strokeWidth={1}
+                    points={[0, 0, width - 60, 0]}
+                    dash={[4,4]}
+                />
+                <Text
+                    text={`${hz}Hz`}
+                    fill={color}
+                    align="left"
+                    width={55}
+                    x={width - 55}
+                    y={-5}
+                />
+            </Group>;
+        })}
+    </>;
+});
+
+const CENT_GRID_POSITIONS = [1,0,-1];
+
+type CentsGridProps = {
+    octaveSize: number;
+    rootHz: number;
+    width: number;
+    getY: (hz: number) => number;
+    visibleRange: [number,number];
+};
+
+const CentsGrid = React.memo(function CentsGrid(props: CentsGridProps): React.ReactElement {
+    const {getY, rootHz, octaveSize, width, visibleRange} = props;
+
+    const lines: [number,number,number][] = [];
+
+    CENT_GRID_POSITIONS.forEach(octave => {
+        for(let i = 100; i < octaveSize * 600; i+=100) {
+            const hz = rootHz * centsToRatio(i, octave);
+            if(hzInRange(hz, visibleRange)) {
+                lines.push([i, hz, octave]);
+            }
+        }
+    });
+
+    return <>
+        {lines.map(([cents, hz, octave]) => {
+            const y = getY(hz);
+            const color = hsl(208, 32, (2 - Math.abs(octave)) * 16);
+            return <Group key={hz} y={y}>
+                <Line
+                    stroke={color}
+                    strokeWidth={1}
+                    points={[0, 0, width - 60, 0]}
+                />
+                <Text
+                    text={`${cents}c`}
+                    fill={color}
+                    align="left"
+                    width={55}
+                    x={width - 55}
+                    y={-5}
+                />
+            </Group>;
+        })}
+    </>;
+});

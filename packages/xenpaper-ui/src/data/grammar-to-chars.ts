@@ -52,7 +52,7 @@ const colorMap = new Map<string,HighlightColor>([
     ['SetSubdivision','setter'],
     ['SetOsc','setter'],
     ['SetEnv','setter'],
-    ['SetRulerGrid','setter'],
+    ['SetRulerPlot','setter'],
     ['SetRulerRange','setter'],
     ['SetRulerRange.Pitch','setter'],
     ['SetterGroup','setterGroup'],

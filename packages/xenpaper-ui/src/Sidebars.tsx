@@ -29,7 +29,7 @@ const Flink = styled.a`
 export const Footer = styled(props => {
     return <Box px={3} py={2} {...props}>
         <Text as="div" color="text.placeholder">
-            <Flink href="#">Xenpaper</Flink> <Flink target="_blank" href="https://github.com/dxinteractive/xenpaper/releases">(v1.5.0)</Flink> is made by <Flink target="_blank" href="https://damienclarke.me">Damien Clarke</Flink> using <Flink target="_blank" href="https://www.typescriptlang.org/">typescript</Flink>, <Flink target="_blank" href="https://reactjs.org/">react</Flink>, <Flink target="_blank" href="https://tonejs.github.io/">tonejs</Flink>, <Flink target="_blank" href="https://github.com/dmaevsky/rd-parse">rd-parse</Flink>, <Flink target="_blank" href="https://styled-components.com/">styled-components</Flink> and <Flink target="_blank" href="https://dendriform.xyz">dendriform</Flink>.
+            <Flink href="#">Xenpaper</Flink> <Flink target="_blank" href="https://github.com/dxinteractive/xenpaper/releases">(v1.6.0)</Flink> is made by <Flink target="_blank" href="https://damienclarke.me">Damien Clarke</Flink> using <Flink target="_blank" href="https://www.typescriptlang.org/">typescript</Flink>, <Flink target="_blank" href="https://reactjs.org/">react</Flink>, <Flink target="_blank" href="https://tonejs.github.io/">tonejs</Flink>, <Flink target="_blank" href="https://github.com/dmaevsky/rd-parse">rd-parse</Flink>, <Flink target="_blank" href="https://styled-components.com/">styled-components</Flink> and <Flink target="_blank" href="https://dendriform.xyz">dendriform</Flink>.
         </Text>
     </Box>;
 })`
@@ -134,6 +134,11 @@ export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
             <Ex tune={"(env:0158)0-.....\n(env:6860)0---..."} color="pitch" onSetTune={onSetTune} />
         </B>
         <B>All oscillator and envelope options are made possible by <Flink target="_blank" href="https://tonejs.github.io/">tonejs</Flink>.</B>
+        <Box pt={4}><H>Ruler</H></Box>
+        <B>The Ruler button displays a pitch ruler. Played notes will appear on it. Click and drag to pan, use the mouse wheel to zoom. Touch devices are not yet supported.</B>
+        <B>The current scale can be plotted by calling <C>(plot)</C>. Calling it multiple times will render multiple scales. To see this demo, you must click Ruler after you click Demo.
+            <Ex tune={"(plot){19edo}(plot)"} color="pitch" onSetTune={onSetTune} />
+        </B>
         <Box pt={4}><H>Bugs and future features</H></Box>
         <B>Find anything broken, or have some ideas you want to share? Visit the <Flink target="_blank" href="https://github.com/dxinteractive/xenpaper/issues">issue tracker on github</Flink> to file bugs or discuss future features.</B>
         <Box display={['block', 'block', 'none']} pt={4}>

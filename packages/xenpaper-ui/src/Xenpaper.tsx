@@ -282,7 +282,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
         rulerState.set(draft => {
             draft.rootHz = initialRulerState?.rootHz;
             draft.octaveSize = initialRulerState?.octaveSize;
-            draft.scales = initialRulerState?.scales;
+            draft.plots = initialRulerState?.plots;
         });
     });
 
