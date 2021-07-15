@@ -348,17 +348,16 @@ const RootGrid = React.memo(function RootGrid(props: RootGridProps): React.React
     return <>
         {lines.map(([i, hz]) => {
             const y = getY(hz);
-            const color = hsl(208, 32, (6 - Math.abs(i)) * 12);
             return <Group key={i} y={y}>
                 <Line
-                    stroke={color}
+                    stroke={hsl(208, 32, (6 - Math.abs(i)) * 12)}
                     strokeWidth={1}
                     points={[0, 0, width - 60, 0]}
                     dash={[4,4]}
                 />
                 <Text
                     text={`${hz}Hz`}
-                    fill={color}
+                    fill={hsl(208, 32, (6 - Math.abs(i)) * 24)}
                     align="left"
                     width={55}
                     x={width - 55}
@@ -396,16 +395,15 @@ const CentsGrid = React.memo(function CentsGrid(props: CentsGridProps): React.Re
     return <>
         {lines.map(([cents, hz, octave]) => {
             const y = getY(hz);
-            const color = hsl(208, 32, (2 - Math.abs(octave)) * 16);
             return <Group key={hz} y={y}>
                 <Line
-                    stroke={color}
+                    stroke={hsl(208, 32, (2 - Math.abs(octave)) * 12)}
                     strokeWidth={1}
                     points={[0, 0, width - 60, 0]}
                 />
                 <Text
                     text={`${cents}c`}
-                    fill={color}
+                    fill={hsl(208, 32, (2 - Math.abs(octave)) * 24)}
                     align="left"
                     width={55}
                     x={width - 55}
