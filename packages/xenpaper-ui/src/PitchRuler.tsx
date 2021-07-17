@@ -245,7 +245,7 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
             colourModeThreshold,
             !colourModeSoft
         );
-    }, [colourMode, colourModeThreshold, colourModeSoft, notes]);
+    }, [colourMode, colourModeThreshold, colourModeSoft, notes, plots]);
 
     //
     // interactions
