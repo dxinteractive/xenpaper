@@ -281,7 +281,7 @@ const chordToMosc = (chord: ChordType|RatioChordType, context: Context): MoscNot
         return pitch.type === 'RatioChordPitch';
     }) as RatioChordPitchType|undefined;
 
-    const firstDenominator = (firstRatioPitch as RatioChordPitchType).pitch || 1;
+    const firstDenominator = (firstRatioPitch as RatioChordPitchType)?.pitch || 1;
 
     const ratioPitchTypes: MoscNote[] = [];
     const addRatioPitchType = (numerator: number): void => {
