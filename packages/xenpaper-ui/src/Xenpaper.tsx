@@ -283,6 +283,12 @@ export function XenpaperApp(props: Props): React.ReactElement {
             draft.rootHz = initialRulerState?.rootHz;
             draft.octaveSize = initialRulerState?.octaveSize;
             draft.plots = initialRulerState?.plots;
+            if(draft.colourMode.startsWith('proxplot')) {
+                const index = Number(draft.colourMode.replace('proxplot',''));
+                if(index >= (draft.plots ?? []).length) {
+                    draft.colourMode = 'gradient';
+                }
+            }
         });
     });
 
@@ -412,7 +418,7 @@ export function XenpaperApp(props: Props): React.ReactElement {
             return <SidebarShare setSidebar={setSidebar} url={url} urlEmbed={urlEmbed} />;
         })}
         {sidebarState === 'ruler' &&
-            <Sidebar setSidebar={setSidebar} title="Pitch ruler" desc="Click and drag to pan, use mousewheel to zoom.">
+            <Sidebar setSidebar={setSidebar} title="Pitch ruler" desc="Click and drag to pan, use mousewheel to zoom." wide>
                 <PitchRuler rulerState={rulerState} />
             </Sidebar>
         }
