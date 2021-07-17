@@ -270,7 +270,7 @@ export const RatioChordPitch = node/*<RatioChordPitchType>*/(
 export type RatioChordPitchGroupType = Array<RatioChordPitchType|DelimiterType>;
 
 export const RatioChordPitchGroup = Node(
-    All(RatioChordPitch, Colon, RatioChordPitch, Star(All(Colon, RatioChordPitch))),
+    All(RatioChordPitch, Colon, Optional(Colon), RatioChordPitch, Star(All(Colon, Optional(Colon),  RatioChordPitch))),
     (elements: RatioChordPitchGroupType) => elements
 );
 

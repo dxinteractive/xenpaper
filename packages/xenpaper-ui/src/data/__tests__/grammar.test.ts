@@ -1051,6 +1051,53 @@ describe('grammar', () => {
                 ]);
             });
 
+            it('should parse sequence with a ratio chord with interpolation', () => {
+                expect(strip(parser('4::7::10--')).sequence.items).toEqual([
+                    {
+                        type: 'RatioChord',
+                        pitches: [
+                            {
+                                type: 'RatioChordPitch',
+                                pitch: 4,
+                                len: 1
+                            },
+                            {
+                                type: 'Colon',
+                                len: 1
+                            },
+                            {
+                                type: 'Colon',
+                                len: 1
+                            },
+                            {
+                                type: 'RatioChordPitch',
+                                pitch: 7,
+                                len: 1
+                            },
+                            {
+                                type: 'Colon',
+                                len: 1
+                            },
+                            {
+                                type: 'Colon',
+                                len: 1
+                            },
+                            {
+                                type: 'RatioChordPitch',
+                                pitch: 10,
+                                len: 2
+                            }
+                        ],
+                        tail: {
+                            type: 'Hold',
+                            length: 2,
+                            len: 2
+                        },
+                        len: 10
+                    }
+                ]);
+            });
+
             it('should parse sequence with a chord with octave modifiers', () => {
                 expect(strip(parser('[0,7,\'0]')).sequence.items).toEqual([
                     {
