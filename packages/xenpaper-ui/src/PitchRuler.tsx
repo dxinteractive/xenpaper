@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import useDimensions from 'react-use-dimensions';
 import * as ReactKonva from 'react-konva';
 import {useStrictMode} from 'react-konva';
-import {useDendriform, useCheckbox} from 'dendriform';
+import {useDendriform, useCheckbox, useInput} from 'dendriform';
 import type {Dendriform} from 'dendriform';
 import type {MoscNoteMs} from '@xenpaper/mosc';
 import {Box, Flex} from './layout/Layout';
@@ -14,12 +14,20 @@ import {centsToRatio} from '@xenpaper/mosc';
 useStrictMode(true);
 const {Stage, Layer, Rect, Group, Text, Line} = ReactKonva as any;
 
+export enum ColourMode {
+    GRADIENT = "GRADIENT",
+    NEAR_NOTES_SOFT = "NEAR_NOTES_SOFT",
+    NEAR_NOTES_HARD = "NEAR_NOTES_HARD"
+};
+
 export type RulerState = {
     notes: Map<string,MoscNoteMs>;
     notesActive: Map<string,MoscNoteMs>;
     collect: boolean;
     viewPan: number;
     viewZoom: number;
+    colourMode: ColourMode;
+    colourModeThreshold: number;
     rootHz?: number;
     octaveSize?: number;
     plots?: MoscNoteMs[][];
@@ -32,6 +40,8 @@ const hzToPan = (hz: number): number => Math.log2(hz / LOW_HZ_LIMIT);
 
 const panToHz = (pan: number): number => Math.pow(2, pan) * LOW_HZ_LIMIT;
 
+const panToCents = (pan: number): number => pan * 1200;
+
 const panToPx = (pan: number, viewPan: number, viewZoom: number, height: number): number => {
     return height * 0.5 - ((pan - viewPan) * height / viewZoom);
 };
@@ -42,6 +52,33 @@ const pxToPan = (px: number, viewPan: number, viewZoom: number, height: number):
 
 const hzInRange = (hz: number, [lowHz, highHz]: [number,number]) => {
     return hz >= lowHz && hz <= highHz;
+};
+
+// this is so completely stupid
+// and doesnt even work with non 2x octave sizes
+// but i'm done with this
+const getGradientColorFromNote = (note: MoscNoteMs): string => {
+    const matched = note.label.match(/([\d.]+)c/);
+    if(!matched) {
+        return hsl(0, 100, 66);
+    }
+    const hue = Math.floor(Number(matched[1]) / 1200 * 360 + 180);
+    return hsl(hue, 100, 66);
+};
+
+const getColorFromNoteProximity = (note: MoscNoteMs, proxNotes: MoscNoteMs[], threshold: number, hard: boolean): string => {
+    const noteCents = panToCents(hzToPan(note.hz));
+    let distance = Math.min(
+        ...proxNotes
+            .map(note => panToCents(hzToPan(note.hz)))
+            .map(cents => Math.abs(noteCents - cents))
+    ) / threshold;
+
+    if(hard) {
+        distance = distance > 1 ? 1000 : distance;
+    }
+
+    return hsl(Math.round(360 - (Math.min(distance, 2) * 80)), 100, Math.round(Math.max(1 - distance * 0.5, 0) * 50 + 10));
 };
 
 export type InitialRulerState = {
@@ -71,6 +108,8 @@ export function useRulerState({lowHz, highHz, ...rest}: InitialRulerState = {}) 
             collect: true,
             viewPan,
             viewZoom,
+            colourMode: ColourMode.GRADIENT,
+            colourModeThreshold: 15,
             ...rest
         };
     });
@@ -90,18 +129,51 @@ export function PitchRuler(props: Props): React.ReactElement|null {
     }, []);
 
     return <Flex flexDirection="column" style={{height: '100%'}}>
-        <Flex p={2}>
-            <Box mr={3}>
-                {rulerState.render('collect', form => (
-                    <Label>
-                        <input type="checkbox" {...useCheckbox(form)} />
-                        {' '}collect
-                    </Label>
-                ))}
-            </Box>
-            <Box>
-                <Button onClick={onClear}>clear</Button>
-            </Box>
+        <Flex pt={2} px={2} flexWrap="wrap">
+            <Flex flexShrink={0} pb={2}>
+                <Box mr={3}>
+                    {rulerState.render('collect', form => (
+                        <Label>
+                            <input type="checkbox" {...useCheckbox(form)} />
+                            <Box as="span" ml={2}>collect</Box>
+                        </Label>
+                    ))}
+                </Box>
+                <Box mr={3}>
+                    <Button onClick={onClear}>clear</Button>
+                </Box>
+            </Flex>
+            <Flex flexShrink={0} pb={2}>
+                {rulerState.render('colourMode', form => <>
+                    <Box mr={3}>
+                        <Label>
+                            <Box as="span" mr={2}>colour</Box>
+                            <select {...useInput(form)}>
+                                <option value={ColourMode.GRADIENT}>Gradient</option>
+                                <option value={ColourMode.NEAR_NOTES_SOFT}>Near notes (soft)</option>
+                                <option value={ColourMode.NEAR_NOTES_HARD}>Near notes (hard)</option>
+                            </select>
+                        </Label>
+                    </Box>
+                    {form.useValue() !== ColourMode.GRADIENT &&
+                        <Box mr={3}>
+                            {rulerState.render('colourModeThreshold', form => (
+                                <Label>
+                                    <Box as="span" mr={2}>threshold</Box>
+                                    <input
+                                        type="number"
+                                        value={`${form.useValue()}`}
+                                        onChange={(e) => form.set(Number(e.target.value))}
+                                        min="1"
+                                        max="100"
+                                        step="1"
+                                    />
+                                </Label>
+                            ))}
+                        </Box>
+                    }
+                </>)}
+            </Flex>
         </Flex>
         <PitchRulerCanvas {...props} />
     </Flex>;
@@ -117,12 +189,49 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
     const [dimensionsRef, {width = 0, height = 0}] = useDimensions();
 
     const rulerState = props.rulerState.useValue();
+    const {
+        viewPan,
+        viewZoom,
+        rootHz,
+        octaveSize,
+        plots = [],
+        notes,
+        notesActive,
+        colourMode,
+        colourModeThreshold
+    } = rulerState;
 
-    const {viewPan, viewZoom} = rulerState;
+    const visibleRange: [number,number] = [
+        panToHz(pxToPan(height, viewPan, viewZoom, height)),
+        panToHz(pxToPan(0, viewPan, viewZoom, height))
+    ];
+
+    const total = plots.length + 1;
+    const noteSetWidth = (width - 60) / total;
+
+    //
+    // getters
+    //
 
     const getY = useCallback((hz: number): number => {
-       return panToPx(hzToPan(hz), viewPan, viewZoom, height);
+        return panToPx(hzToPan(hz), viewPan, viewZoom, height);
     }, [viewPan, viewZoom, height]);
+
+    const getColorPlots = useCallback((note: MoscNoteMs): string => {
+        if(colourMode === ColourMode.GRADIENT) {
+            return getGradientColorFromNote(note);
+        }
+        return getColorFromNoteProximity(
+            note,
+            Array.from(notes.values()),
+            colourModeThreshold,
+            colourMode === ColourMode.NEAR_NOTES_HARD
+        );
+    }, [colourMode, colourModeThreshold, notes]);
+
+    //
+    // interactions
+    //
 
     const dragStartState = useRef<DragStartState|null>(null);
     const [dragging, setDragging] = useState<boolean>(false);
@@ -182,15 +291,11 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
     }, []);
 
     // TODO zoom toward cursor position
+    // TODO zoom on touch devices
 
-    const visibleRange: [number,number] = [
-        panToHz(pxToPan(height, viewPan, viewZoom, height)),
-        panToHz(pxToPan(0, viewPan, viewZoom, height))
-    ];
-
-    const {rootHz, octaveSize, plots = [], notes, notesActive} = rulerState;
-    const total = plots.length + 1;
-    const noteSetWidth = (width - 60) / total;
+    //
+    // render
+    //
 
     const style = {
         height: '100%',
@@ -245,6 +350,7 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
                         width={noteSetWidth}
                         x={noteSetWidth * (index + 1)}
                         visibleRange={visibleRange}
+                        getColor={getColorPlots}
                     />
                 })}
                 <NoteSet
@@ -261,19 +367,11 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
 }
 
 
-// this is so completely stupid
-// and doesnt even work with non 2x octave sizes
-// but i'm done with this
-const getColorFromLabel = (label: string): number => {
-    const matched = label.match(/([\d.]+)c/);
-    if(!matched) return 0;
-    const hue = Math.floor(Number(matched[1]) / 1200 * 360 + 180);
-    return hue;
-};
 
 type NoteSetProps = {
     notes: MoscNoteMs[];
     getY: (hz: number) => number;
+    getColor?: (note: MoscNoteMs) => string;
     color?: string;
     width: number;
     x: number;
@@ -281,13 +379,20 @@ type NoteSetProps = {
 };
 
 const NoteSet = React.memo(function NoteSet(props: NoteSetProps): React.ReactElement {
-    const {width, notes, getY, x, visibleRange} = props;
+    const {
+        width,
+        notes,
+        getColor = getGradientColorFromNote,
+        getY,
+        x,
+        visibleRange
+    } = props;
 
     const visibleNotes = notes.filter(note => hzInRange(note.hz, visibleRange));
 
     return <>
         {visibleNotes.map((note, index) => {
-            const color = props.color ?? hsl(getColorFromLabel(note.label), 100, 66);
+            const color = props.color ?? getColor(note);
             return <Group key={index} x={x} y={getY(note.hz)}>
                 <Line
                     stroke={color}
