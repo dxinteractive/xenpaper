@@ -392,24 +392,26 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
         };
 
         pitches.forEach(pitch => {
-            if(!pitch.delimiter) {
-                const numerator = pitch.pitch;
-                if(firstDenominator === -1) {
-                    firstDenominator = numerator;
-                }
-
-                if(colons == 2) {
-                    while(lastNumerator < numerator - 1) {
-                        lastNumerator++;
-                        addRatio(lastNumerator);
-                    }
-                }
-
-                addRatio(numerator);
-                lastNumerator = numerator;
+            if(pitch.delimiter) {
+                colons++;
                 return;
             }
-            colons++;
+
+            const numerator = pitch.pitch;
+            if(firstDenominator === -1) {
+                firstDenominator = numerator;
+            }
+
+            if(colons === 2) {
+                while(lastNumerator < numerator - 1) {
+                    lastNumerator++;
+                    addRatio(lastNumerator);
+                }
+            }
+
+            addRatio(numerator);
+            lastNumerator = numerator;
+            colons = 0;
         });
 
         if(scaleOctaveMarker) {
