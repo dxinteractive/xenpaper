@@ -1,20 +1,20 @@
 {
   "files": {
-    "main.js": "/static/js/main.7f9dd44e.chunk.js",
-    "main.js.map": "/static/js/main.7f9dd44e.chunk.js.map",
+    "main.js": "/static/js/main.eb1a08ae.chunk.js",
+    "main.js.map": "/static/js/main.eb1a08ae.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.8b262454.js",
     "runtime-main.js.map": "/static/js/runtime-main.8b262454.js.map",
-    "static/js/2.56019d83.chunk.js": "/static/js/2.56019d83.chunk.js",
-    "static/js/2.56019d83.chunk.js.map": "/static/js/2.56019d83.chunk.js.map",
+    "static/js/2.57b165c5.chunk.js": "/static/js/2.57b165c5.chunk.js",
+    "static/js/2.57b165c5.chunk.js.map": "/static/js/2.57b165c5.chunk.js.map",
     "static/js/3.2bd85485.chunk.js": "/static/js/3.2bd85485.chunk.js",
     "static/js/3.2bd85485.chunk.js.map": "/static/js/3.2bd85485.chunk.js.map",
     "index.html": "/index.html",
-    "static/js/2.56019d83.chunk.js.LICENSE.txt": "/static/js/2.56019d83.chunk.js.LICENSE.txt",
+    "static/js/2.57b165c5.chunk.js.LICENSE.txt": "/static/js/2.57b165c5.chunk.js.LICENSE.txt",
     "static/media/xenpaper-logo-512x512.19f23cff.png": "/static/media/xenpaper-logo-512x512.19f23cff.png"
   },
   "entrypoints": [
     "static/js/runtime-main.8b262454.js",
-    "static/js/2.56019d83.chunk.js",
-    "static/js/main.7f9dd44e.chunk.js"
+    "static/js/2.57b165c5.chunk.js",
+    "static/js/main.eb1a08ae.chunk.js"
   ]
 }
