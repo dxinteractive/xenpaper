@@ -281,18 +281,40 @@ const chordToMosc = (chord: ChordType|RatioChordType, context: Context): MoscNot
         return pitch.type === 'RatioChordPitch';
     }) as RatioChordPitchType|undefined;
 
-    const ratioPitchTypes: MoscNote[] = pitches
-        .filter((pitch): pitch is RatioChordPitchType => pitch.type === 'RatioChordPitch')
-        .map((pitch: any) => {
-            const numerator = (pitch as RatioChordPitchType).pitch;
-            const denominator = (firstRatioPitch as RatioChordPitchType).pitch;
-            return {
-                type: 'NOTE_TIME',
-                hz: numerator / denominator * context.rootHz,
-                label: `${numerator}/${denominator}  ${ratioToCentsLabel(numerator / denominator, context.octaveSize)}`,
-                ...timeProps
-            };
+    const firstDenominator = (firstRatioPitch as RatioChordPitchType)?.pitch || 1;
+
+    const ratioPitchTypes: MoscNote[] = [];
+    const addRatioPitchType = (numerator: number): void => {
+        ratioPitchTypes.push({
+            type: 'NOTE_TIME',
+            hz: numerator / firstDenominator * context.rootHz,
+            label: `${numerator}/${firstDenominator}  ${ratioToCentsLabel(numerator / firstDenominator, context.octaveSize)}`,
+            ...timeProps
         });
+    };
+
+    let colons = 0;
+    let lastNumerator = 1;
+    pitches.forEach((pitch: any) => {
+        if(pitch.type === 'RatioChordPitch') {
+            const numerator = (pitch as RatioChordPitchType).pitch;
+
+            if(colons == 2) {
+                while(lastNumerator < numerator - 1) {
+                    lastNumerator++;
+                    addRatioPitchType(lastNumerator);
+                }
+            }
+
+            addRatioPitchType(numerator);
+            lastNumerator = numerator;
+            colons = 0;
+            return;
+        }
+        if(pitch.type === 'Colon') {
+            colons++;
+        }
+    });
 
     return pitchTypes.concat(ratioPitchTypes);
 };
@@ -355,14 +377,39 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
     if(type === 'RatioChordScale') {
         const {pitches, scaleOctaveMarker} = scale as RatioChordScaleType;
 
-        const ratios: number[] = pitches
-            .filter((pitch): pitch is RatioChordPitchType => !pitch.delimiter)
-            .map(pitch => pitch.pitch);
+        context.scale = [];
+        context.scaleLabels = [];
 
-        context.scale = ratios.map(ratio => ratio / ratios[0]);
-        context.scaleLabels = ratios.map(ratio => {
-            const centsLabel = ratioToCentsLabel(ratio/ratios[0], 2);
-            return `${ratio}/${ratios[0]}  ${centsLabel}`;
+        let firstDenominator = -1;
+        let colons = 0;
+        let lastNumerator = 0;
+
+        const addRatio = (numerator: number): void => {
+            const ratio = numerator / firstDenominator;
+            context.scale.push(ratio);
+            const centsLabel = ratioToCentsLabel(ratio, 2);
+            context.scaleLabels.push(`${numerator}/${firstDenominator}  ${centsLabel}`);
+        };
+
+        pitches.forEach(pitch => {
+            if(!pitch.delimiter) {
+                const numerator = pitch.pitch;
+                if(firstDenominator === -1) {
+                    firstDenominator = numerator;
+                }
+
+                if(colons == 2) {
+                    while(lastNumerator < numerator - 1) {
+                        lastNumerator++;
+                        addRatio(lastNumerator);
+                    }
+                }
+
+                addRatio(numerator);
+                lastNumerator = numerator;
+                return;
+            }
+            colons++;
         });
 
         if(scaleOctaveMarker) {

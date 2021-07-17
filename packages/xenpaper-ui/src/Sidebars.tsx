@@ -95,6 +95,9 @@ export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
         <B>Scales can use colon-notated ratios
             <Ex tune={"{12:14:16:18:21}\n0 1 2 3 4 5 6 7-"} color="pitch" onSetTune={onSetTune} />
         </B>
+        <B>Harmonic series segments can be specified by using the <C>{"::"}</C> symbol inside a colon-notated ratio scale. <C>4::7</C> is the same as <C>4:5:6:7</C>.
+            <Ex tune={"{4::7}\n0 1 2 3 4-"} color="pitch" onSetTune={onSetTune} />
+        </B>
         <B>Scales can also reference the scale degrees at the moment they are encountered. This can be useful for creating a subset of a scale.
             <Ex tune={"{19edo}{0 3 6 8 11 14 17}\n0 1 2 3 4 5 6 7-"} color="pitch" onSetTune={onSetTune} />
         </B>
