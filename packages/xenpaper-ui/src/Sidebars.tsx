@@ -209,11 +209,12 @@ type SidebarProps = {
     title?: string;
     desc?: string;
     pad?: boolean;
+    wide?: boolean;
 };
 
 export const Sidebar = (props: SidebarProps): React.ReactElement => {
-    const {setSidebar, children, title, desc, pad} = props;
-    return <TextPanel width={['auto', '20rem', '30rem', '40%']} flexDirection="column" flexShrink="0" minHeight="0" height={['66vh', 'auto']}>
+    const {setSidebar, children, title, desc, pad, wide} = props;
+    return <TextPanel width={['auto', '20rem', '30rem', wide ? '55%' : '40%']} flexDirection="column" flexShrink="0" minHeight="0" height={['66vh', 'auto']}>
         <Box position={["absolute", "fixed"]} top={0} right={0} pt={3} pr={3}>
             <IconToggle
                 state="cross"

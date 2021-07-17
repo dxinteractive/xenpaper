@@ -14,20 +14,15 @@ import {centsToRatio} from '@xenpaper/mosc';
 useStrictMode(true);
 const {Stage, Layer, Rect, Group, Text, Line} = ReactKonva as any;
 
-export enum ColourMode {
-    GRADIENT = "GRADIENT",
-    NEAR_NOTES_SOFT = "NEAR_NOTES_SOFT",
-    NEAR_NOTES_HARD = "NEAR_NOTES_HARD"
-};
-
 export type RulerState = {
     notes: Map<string,MoscNoteMs>;
     notesActive: Map<string,MoscNoteMs>;
     collect: boolean;
     viewPan: number;
     viewZoom: number;
-    colourMode: ColourMode;
+    colourMode: string;
     colourModeThreshold: number;
+    colourModeSoft: boolean;
     rootHz?: number;
     octaveSize?: number;
     plots?: MoscNoteMs[][];
@@ -108,8 +103,9 @@ export function useRulerState({lowHz, highHz, ...rest}: InitialRulerState = {}) 
             collect: true,
             viewPan,
             viewZoom,
-            colourMode: ColourMode.GRADIENT,
+            colourMode: 'gradient',
             colourModeThreshold: 15,
+            colourModeSoft: true,
             ...rest
         };
     });
@@ -134,8 +130,8 @@ export function PitchRuler(props: Props): React.ReactElement|null {
                 <Box mr={3}>
                     {rulerState.render('collect', form => (
                         <Label>
+                            <Box as="span" mr={2}>collect</Box>
                             <input type="checkbox" {...useCheckbox(form)} />
-                            <Box as="span" ml={2}>collect</Box>
                         </Label>
                     ))}
                 </Box>
@@ -149,13 +145,17 @@ export function PitchRuler(props: Props): React.ReactElement|null {
                         <Label>
                             <Box as="span" mr={2}>colour</Box>
                             <select {...useInput(form)}>
-                                <option value={ColourMode.GRADIENT}>Gradient</option>
-                                <option value={ColourMode.NEAR_NOTES_SOFT}>Near notes (soft)</option>
-                                <option value={ColourMode.NEAR_NOTES_HARD}>Near notes (hard)</option>
+                                <option value="gradient">Gradient</option>
+                                <option value="proxnotes">Proximity to notes</option>
+                                {rulerState.render('plots', plots => <>
+                                    {(plots.useValue() ?? []).map((plot, i) => (
+                                        <option key={i} value={`proxplot${i}`}>Proximity to plot {i+1}</option>
+                                    ))}
+                                </>)}
                             </select>
                         </Label>
                     </Box>
-                    {form.useValue() !== ColourMode.GRADIENT &&
+                    {form.useValue() !== 'gradient' && <>
                         <Box mr={3}>
                             {rulerState.render('colourModeThreshold', form => (
                                 <Label>
@@ -171,7 +171,15 @@ export function PitchRuler(props: Props): React.ReactElement|null {
                                 </Label>
                             ))}
                         </Box>
-                    }
+                        <Box mr={3}>
+                            {rulerState.render('colourModeSoft', form => (
+                                <Label>
+                                    <Box as="span" mr={2}>soft</Box>
+                                    <input type="checkbox" {...useCheckbox(form)} />
+                                </Label>
+                            ))}
+                        </Box>
+                    </>}
                 </>)}
             </Flex>
         </Flex>
@@ -198,7 +206,8 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
         notes,
         notesActive,
         colourMode,
-        colourModeThreshold
+        colourModeThreshold,
+        colourModeSoft
     } = rulerState;
 
     const visibleRange: [number,number] = [
@@ -217,17 +226,26 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
         return panToPx(hzToPan(hz), viewPan, viewZoom, height);
     }, [viewPan, viewZoom, height]);
 
-    const getColorPlots = useCallback((note: MoscNoteMs): string => {
-        if(colourMode === ColourMode.GRADIENT) {
+    const getColor = useCallback((note: MoscNoteMs): string => {
+        if(colourMode === 'gradient') {
             return getGradientColorFromNote(note);
         }
+
+        let compare: MoscNoteMs[] = [];
+        if(colourMode === 'proxnotes') {
+            compare = Array.from(notes.values());
+        } else if(colourMode.startsWith('proxplot')) {
+            const index = Number(colourMode.replace('proxplot',''));
+            compare = plots[index] ?? [];
+        }
+
         return getColorFromNoteProximity(
             note,
-            Array.from(notes.values()),
+            compare,
             colourModeThreshold,
-            colourMode === ColourMode.NEAR_NOTES_HARD
+            !colourModeSoft
         );
-    }, [colourMode, colourModeThreshold, notes]);
+    }, [colourMode, colourModeThreshold, colourModeSoft, notes]);
 
     //
     // interactions
@@ -340,6 +358,7 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
                         width={noteSetWidth}
                         x={0}
                         visibleRange={visibleRange}
+                        getColor={getColor}
                     />
                 }
                 {(plots || []).map((plot, index) => {
@@ -350,7 +369,7 @@ function PitchRulerCanvas(props: Props): React.ReactElement|null {
                         width={noteSetWidth}
                         x={noteSetWidth * (index + 1)}
                         visibleRange={visibleRange}
-                        getColor={getColorPlots}
+                        getColor={getColor}
                     />
                 })}
                 <NoteSet
