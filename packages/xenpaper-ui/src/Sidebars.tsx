@@ -626,6 +626,7 @@ type ExProps = {
     tune: string;
     onSetTune: (tune: string) => void;
     color: string;
+    className?: string;
 };
 
 const Ex = styled((props: ExProps): React.ReactElement => {
