@@ -357,8 +357,6 @@ const chordToMosc = (
         }
     });
 
-    throw new Error("/?????");
-
     return pitchTypes.concat(ratioPitchTypes);
 };
 
