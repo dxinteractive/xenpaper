@@ -625,8 +625,6 @@ const setScale = (setScale: SetScaleType, context: Context): void => {
 const setPrimes = (setPrimes: SetPrimesType, context: Context): void => {
     const { primesPitches } = setPrimes;
 
-    console.debug(setPrimes);
-
     let filteredPitches: PitchType[] = primesPitches.filter(
         (pitch): pitch is PitchType => !pitch.delimiter
     ) as PitchType[];
