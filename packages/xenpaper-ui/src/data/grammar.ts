@@ -61,6 +61,9 @@ export const BarLine = node/*<DelimiterType>*/(
     })
 );
 
+/**
+ * One or more /\s/ or comma
+ */
 export const Whitespace = node/*<DelimiterType>*/(
     'Whitespace',
     /(^[,\s]+)/,
@@ -196,6 +199,7 @@ export const Pitch = node/*<PitchType>*/(
 
 export type PitchGroupType = Array<PitchType|DelimiterType>;
 
+// Note: this appears as an array of Pitch objects
 export const PitchGroup = Node(
     All(Pitch, Star(All(Whitespace, Pitch))),
     (elements: unknown) => elements
@@ -619,11 +623,28 @@ export type SetRulerType = SetRulerRangeType|SetRulerPlotType;
 
 export const SetRuler = Any(SetRulerRange, SetRulerPlot);
 
+// Tuning of primes
+// Affects calculation of ratio frequencies
+
+export type SetPrimesType = NodeType & {
+    primesPitch: PitchGroupType
+};
+
+export const SetPrimes = node/*<SetPrimesType>*/(
+    'SetPrimes',
+    All(/^(primes:\s*)/, PitchGroup),
+    ([prefix, primesPitch]: [string, PitchGroupType]) => ({
+        primesPitch,
+        len: prefix.length + sumLen(primesPitch)
+    })
+);
+
+
 // setters
 
-export type SetterType = SetBpmType|SetBmsType|SetSubdivisionType|SetOscType|SetEnvType|SetRulerType;
+export type SetterType = SetBpmType|SetBmsType|SetSubdivisionType|SetOscType|SetEnvType|SetRulerType|SetPrimesType;
 
-export const Setter = Any(SetBpm, SetBms, SetSubdivision, SetOsc, SetEnv, SetRuler);
+export const Setter = Any(SetBpm, SetBms, SetSubdivision, SetOsc, SetEnv, SetRuler, SetPrimes);
 
 export type SetterGroupType = NodeType & {
     setters: SetterType[];
@@ -728,7 +749,7 @@ const parser = Parser(XenpaperGrammar);
 export const XenpaperGrammarParser = (input: string): XenpaperAST => {
     try {
         return parser(input);
-    } catch(e) {
+    } catch(e: any) {
         // eslint-disable-next-line no-console
         console.error('e', e);
         throw new Error(e.message.replace(/Remainder:.*/s, ''));
