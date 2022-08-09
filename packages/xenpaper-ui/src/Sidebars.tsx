@@ -389,8 +389,8 @@ export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
                 />
             </B>
             <B>
-                Tuning by primes involves representing a 'just' ratio as a{" "}
-                <Flink target="_blank" href="https://tonejs.github.io/">
+                Tuning by primes involves representing a 'just' ratio as a {" "}
+                <Flink target="_blank" href="https://en.xen.wiki/w/Monzo">
                     Monzo
                 </Flink> (i.e. decomposed into prime factors), and substituting the
                 custom prime tunings in place of the normal <C>2/1 3/1 5/1 7/1 ...</C>
