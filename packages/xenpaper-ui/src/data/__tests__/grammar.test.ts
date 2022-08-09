@@ -1674,7 +1674,7 @@ describe('grammar', () => {
                             {
                                 type: 'SetPrimes',
                                 len: 28,
-                                primesPitch: [
+                                primesPitches: [
                                     {
                                         type: 'Pitch',
                                         value: {

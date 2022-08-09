@@ -627,15 +627,15 @@ export const SetRuler = Any(SetRulerRange, SetRulerPlot);
 // Affects calculation of ratio frequencies
 
 export type SetPrimesType = NodeType & {
-    primesPitch: PitchGroupType
+    primesPitches: PitchGroupType
 };
 
 export const SetPrimes = node/*<SetPrimesType>*/(
     'SetPrimes',
     All(/^(primes:\s*)/, PitchGroup),
-    ([prefix, primesPitch]: [string, PitchGroupType]) => ({
-        primesPitch,
-        len: prefix.length + sumLen(primesPitch)
+    ([prefix, primesPitches]: [string, PitchGroupType]) => ({
+        primesPitches,
+        len: prefix.length + sumLen(primesPitches)
     })
 );
 
@@ -680,7 +680,7 @@ export const Comment = node/*<CommentType>*/(
 // sequence
 //
 
-export type SequenceItemsType = RatioChordType|NoteType|ChordType|RestType|SetterGroupType|SetScaleType|SetRootType|CommentType;
+export type SequenceItemsType = RatioChordType|NoteType|ChordType|RestType|SetterGroupType|SetScaleType|SetRootType|SetPrimesType|CommentType;
 
 export type SequenceType = NodeType & {
     items: SequenceItemsType[];
