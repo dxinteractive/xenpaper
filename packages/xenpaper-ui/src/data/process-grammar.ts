@@ -239,18 +239,12 @@ const pitchDegreeWrap = (degree: number, scale: number[]): [number, number] => {
     limit("Scale degree", degree, -1000, 1000);
 
     const steps = scale.length;
-    let octave = 0;
 
-    while (degree >= steps && octave > -20) {
-        degree -= steps;
-        octave++;
-    }
-    while (degree < 0 && octave < 20) {
-        degree += steps;
-        octave--;
-    }
+    // ensures degrees are within 0 and scale size - 1 (the note just before the octave)
+    let octsToCompensate = -Math.floor(degree / steps);
+    degree += octsToCompensate * steps;
 
-    return [degree, octave];
+    return [degree, -octsToCompensate];
 };
 
 const pitchDegreeToRatio = (
