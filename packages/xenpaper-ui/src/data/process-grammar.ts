@@ -306,6 +306,12 @@ const tailToTime = (
 const ratioWrap = (ratio: number, octaveSize: number): number => {
     // This number represents the interval ratio as a linear multiple of n equaves
     let ratioInEquaves = Math.log2(ratio) / Math.log2(octaveSize);
+
+    // If ratioInEquaves is exactly 1, don't wrap the single-equave interval to 0.
+    if (ratioInEquaves === 1) {
+        return ratio; // return as is, exactly 1 equave.
+    }
+
     // Ensure that the returned result falls within 1:1 (inclusive) and equave (exclusive)
     return ratio * Math.pow(octaveSize, -Math.floor(ratioInEquaves));
 };
