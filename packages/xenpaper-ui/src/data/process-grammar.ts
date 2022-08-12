@@ -144,6 +144,10 @@ const primeFactorize = (n: number): number[] | null => {
  * @param context
  */
 const realizeRatio = (num: number, denom: number, context: Context): number => {
+    if (num == 0 || denom == 0) {
+        throw new Error(`Invalid ratio: ${num}/${denom}. Numerator/denominator cannot be 0.`);
+    }
+
     const num_factors = primeFactorize(num);
     const denom_factors = primeFactorize(denom);
 
@@ -407,10 +411,8 @@ const noteToMosc = (note: NoteType, context: Context): MoscNote[] => {
 
     const hz = pitchToHz(note.pitch, context);
 
-    if (typeof(hz) != "number") {
-        throw new Error("Invalid frequency found: ${hz}");
-    } else if (hz < 0) {
-        throw new Error("Invalid frequency found: ${hz}");
+    if (typeof(hz) != "number" || hz < 0) {
+        throw new Error(`Invalid frequency found: ${hz}`);
     }
     const label = pitchToLabel(note.pitch, context);
 
