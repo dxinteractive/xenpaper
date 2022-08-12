@@ -1665,6 +1665,72 @@ describe('grammar', () => {
                 ]);
             });
 
+            it('should parse sequence with primes tuning setter', () => {
+                expect(strip(parser('(primes: 1200c 19 1100Hz 16/9)')).sequence.items).toEqual([
+                    {
+                        type: 'SetterGroup',
+                        len: 30,
+                        setters: [
+                            {
+                                type: 'SetPrimes',
+                                len: 28,
+                                primesPitches: [
+                                    {
+                                        type: 'Pitch',
+                                        value: {
+                                            type: 'PitchCents',
+                                            cents: 1200,
+                                            len: 5
+                                        },
+                                        len: 5
+                                    },
+                                    {
+                                        type: 'Whitespace',
+                                        len: 1
+                                    },
+                                    {
+                                        type: 'Pitch',
+                                        value: {
+                                            type: 'PitchDegree',
+                                            degree: 19,
+                                            len: 2
+                                        },
+                                        len: 2
+                                    },
+                                    {
+                                        type: 'Whitespace',
+                                        len: 1
+                                    },
+                                    {
+                                        type: 'Pitch',
+                                        value: {
+                                            type: 'PitchHz',
+                                            hz: 1100,
+                                            len: 6
+                                        },
+                                        len: 6
+                                    },
+                                    {
+                                        type: 'Whitespace',
+                                        len: 1
+                                    },
+                                    {
+                                        type: 'Pitch',
+                                        value: {
+                                            type: 'PitchRatio',
+                                            numerator: 16,
+                                            denominator: 9,
+                                            len: 4
+                                        },
+                                        len: 4
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]);
+            });
+
             it('should parse sequence with env setter', () => {
                 expect(strip(parser('(env:0123; env: 9873)')).sequence.items).toEqual([
                     {

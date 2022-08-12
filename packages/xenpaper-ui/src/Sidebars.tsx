@@ -10,6 +10,7 @@ import logo from "./assets/xenpaper-logo-512x512.png";
 
 import type { SidebarState } from "./Xenpaper";
 import { CopyToClipboard } from "react-copy-to-clipboard";
+import { octaveDivisionToRatio } from '../../mosc/src/mosc';
 
 const Flink = styled.a`
     color: ${(props) => props.theme.colors.highlights.unknown};
@@ -366,6 +367,62 @@ export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
                 </Flink>
                 .
             </B>
+
+            <Box pt={4}>
+                <H>Retune primes</H>
+            </Box>
+            <B>
+                You can retune how notes/chords like <C>5/4</C> and <C>4:5:7</C> are tuned with
+                <C>(primes: a b c d...)</C>
+                where <C>a</C> represents the tuning of prime 2,
+                <C>b</C> represents the tuning of the prime 3,
+                <C>c</C> represents the tuning of the prime 5, and so on. Any pitch representation can be used.
+            </B>
+            <B>
+                This example simply configures the default tuning of just intonation ratios,
+                so nothing is changed:
+
+                <Ex
+                    tune={"(primes: 2/1 3/1 5/1 7/1) 1/1 9/8 5/4 4/3 3/2"}
+                    color="pitch"
+                    onSetTune={onSetTune}
+                />
+            </B>
+            <B>
+                Tuning by primes involves representing a 'just' ratio as a {" "}
+                <Flink target="_blank" href="https://en.xen.wiki/w/Monzo">
+                    Monzo
+                </Flink> (i.e. decomposed into prime factors), and substituting the
+                custom prime tunings in place of the normal <C>2/1 3/1 5/1 7/1 ...</C>
+                intervals.
+            </B>
+            <B>
+                This example sets the <C>2/1</C> prime to 4 steps of 12 edo, so now octave
+                ratios now sound as though they were tempered major thirds. Undefined primes
+                will default to being justly-tuned:
+                <Ex
+                    tune={"(primes: 4\\12) 1/1 2/1 4/1 8/1 16/1 3/1 3/2 3/4"}
+                    color="pitch"
+                    onSetTune={onSetTune}
+                />
+            </B>
+            <B>
+                This feature is useful for changing the temperaments/tuning of the
+                entire piece without
+                having to rewrite all the notes:
+
+                <Ex
+                    tune={"(1/4)\n4:5:6:7 # Just\n(primes: 12 19 28 34)4:5:6:7 # 12edo\n(primes: 22\\22 35\\22 51\\22 62\\22)4:5:6:7 # 22edo"}
+                    color="pitch"
+                    onSetTune={onSetTune}
+                />
+            </B>
+            <B>
+                For more info, check out <Flink target="_blank" href="https://en.xen.wiki/w/Vals_and_tuning_space#Vals_and_monzos">
+                    Vals and Monzos
+                </Flink> on the xen wiki.
+            </B>
+
             <Box pt={4}>
                 <H>Ruler</H>
             </Box>

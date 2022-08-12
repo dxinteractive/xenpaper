@@ -5,13 +5,21 @@
     "lint": "yarn lerna run lint",
     "build": "yarn lerna run build",
     "prep": "yarn && yarn lerna bootstrap",
+    "serve": "serve -s packages/xenpaper-app/build",
     "reinstall": "rm -rf node_modules && rm -rf packages/*/node_modules && yarn prep"
   },
   "dependencies": {
-    "lerna": "^3.10.7"
+    "lerna": "^5.3.0"
   },
   "workspaces": {
-    "packages": ["packages/*"],
-    "nohoist": ["**/tsdx", "**/tsdx/**", "**/@types/**"]
-  }
+    "packages": [
+      "packages/*"
+    ],
+    "nohoist": [
+      "**/tsdx",
+      "**/tsdx/**",
+      "**/@types/**"
+    ]
+  },
+  "name": "xenpaper"
 }
