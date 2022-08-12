@@ -300,13 +300,10 @@ const tailToTime = (
 //
 
 const ratioWrap = (ratio: number, octaveSize: number): number => {
-    while (ratio < 1) {
-        ratio *= octaveSize;
-    }
-    while (ratio > octaveSize) {
-        ratio /= octaveSize;
-    }
-    return ratio;
+    // This number represents the interval ratio as a linear multiple of n equaves
+    let ratioInEquaves = Math.log2(ratio) / Math.log2(octaveSize);
+    // Ensure that the returned result falls within 1:1 (inclusive) and equave (exclusive)
+    return ratio * Math.pow(octaveSize, -Math.floor(ratioInEquaves));
 };
 
 const ratioToCentsLabel = (ratio: number, octaveSize: number): string => {
@@ -409,6 +406,12 @@ const noteToMosc = (note: NoteType, context: Context): MoscNote[] => {
     note.time = arr;
 
     const hz = pitchToHz(note.pitch, context);
+
+    if (typeof(hz) != "number") {
+        throw new Error("Invalid frequency found: ${hz}");
+    } else if (hz < 0) {
+        throw new Error("Invalid frequency found: ${hz}");
+    }
     const label = pitchToLabel(note.pitch, context);
 
     return [
