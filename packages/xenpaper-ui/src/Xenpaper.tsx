@@ -236,8 +236,8 @@ export function XenpaperApp(props: Props): React.ReactElement {
             hash = `embed:${hash}`;
         }
 
-        const url = `https://xenpaper.com/#${hashified}`;
-        const urlEmbed = `https://xenpaper.com/#embed:${hashified}`;
+        const url = `https://dxinteractive.github.io/xenpaper/#${hashified}`;
+        const urlEmbed = `https://dxinteractive.github.io/xenpaper/#embed:${hashified}`;
 
         tuneForm.branch("hash").set(hash);
         tuneForm.branch("url").set(url);
