@@ -1,20 +1,20 @@
 {
   "files": {
-    "main.js": "/static/js/main.9070e9af.chunk.js",
-    "main.js.map": "/static/js/main.9070e9af.chunk.js.map",
-    "runtime-main.js": "/static/js/runtime-main.8b262454.js",
-    "runtime-main.js.map": "/static/js/runtime-main.8b262454.js.map",
-    "static/js/2.57b165c5.chunk.js": "/static/js/2.57b165c5.chunk.js",
-    "static/js/2.57b165c5.chunk.js.map": "/static/js/2.57b165c5.chunk.js.map",
-    "static/js/3.2bd85485.chunk.js": "/static/js/3.2bd85485.chunk.js",
-    "static/js/3.2bd85485.chunk.js.map": "/static/js/3.2bd85485.chunk.js.map",
-    "index.html": "/index.html",
-    "static/js/2.57b165c5.chunk.js.LICENSE.txt": "/static/js/2.57b165c5.chunk.js.LICENSE.txt",
-    "static/media/xenpaper-logo-512x512.19f23cff.png": "/static/media/xenpaper-logo-512x512.19f23cff.png"
+    "main.js": "/xenpaper/static/js/main.2cc230ff.chunk.js",
+    "main.js.map": "/xenpaper/static/js/main.2cc230ff.chunk.js.map",
+    "runtime-main.js": "/xenpaper/static/js/runtime-main.fb2d4ee1.js",
+    "runtime-main.js.map": "/xenpaper/static/js/runtime-main.fb2d4ee1.js.map",
+    "static/js/2.9329afa1.chunk.js": "/xenpaper/static/js/2.9329afa1.chunk.js",
+    "static/js/2.9329afa1.chunk.js.map": "/xenpaper/static/js/2.9329afa1.chunk.js.map",
+    "static/js/3.ed983b1c.chunk.js": "/xenpaper/static/js/3.ed983b1c.chunk.js",
+    "static/js/3.ed983b1c.chunk.js.map": "/xenpaper/static/js/3.ed983b1c.chunk.js.map",
+    "index.html": "/xenpaper/index.html",
+    "static/js/2.9329afa1.chunk.js.LICENSE.txt": "/xenpaper/static/js/2.9329afa1.chunk.js.LICENSE.txt",
+    "static/media/xenpaper-logo-512x512.19f23cff.png": "/xenpaper/static/media/xenpaper-logo-512x512.19f23cff.png"
   },
   "entrypoints": [
-    "static/js/runtime-main.8b262454.js",
-    "static/js/2.57b165c5.chunk.js",
-    "static/js/main.9070e9af.chunk.js"
+    "static/js/runtime-main.fb2d4ee1.js",
+    "static/js/2.9329afa1.chunk.js",
+    "static/js/main.2cc230ff.chunk.js"
   ]
 }
