@@ -384,20 +384,6 @@ export const SidebarInfo = (props: SidebarInfoProps): React.ReactElement => {
                     onSetTune={onSetTune}
                 />
             </B>
-            <Box pt={4}>
-                <H>Bugs and future features</H>
-            </Box>
-            <B>
-                Find anything broken, or have some ideas you want to share?
-                Visit the{" "}
-                <Flink
-                    target="_blank"
-                    href="https://github.com/dxinteractive/xenpaper/issues"
-                >
-                    issue tracker on github
-                </Flink>{" "}
-                to file bugs or discuss future features.
-            </B>
             <Box display={["block", "block", "none"]} pt={4}>
                 <Footer />
             </Box>
