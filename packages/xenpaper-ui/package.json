@@ -17,8 +17,7 @@
     "url": "https://github.com/xenpaper/issues"
   },
   "scripts": {
-    "test": "yarn tsc && yarn jest",
-    "lint": "yarn eslint src/**/*.ts src/**/*.tsx"
+    "test": "yarn tsc && yarn jest"
   },
   "dependencies": {
     "@xenpaper/mosc": "0.0.1",
@@ -55,11 +54,7 @@
     "@types/react-helmet": "^6.1.0",
     "@types/styled-components": "^5.1.4",
     "@types/styled-system": "^5.1.10",
-    "@typescript-eslint/eslint-plugin": "^4.23.0",
-    "@typescript-eslint/parser": "^4.23.0",
     "babel-jest": "26.6.0",
-    "eslint": "^7.26.0",
-    "eslint-config-blueflag": "^0.11.1",
     "jest": "26.6.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
