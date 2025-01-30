@@ -6,7 +6,7 @@ import { ErrorMessage } from "./component/ErrorMessage";
 import { LoaderPane } from "./component/LoaderPane";
 import { Char } from "./component/Char";
 import { Box, Flex } from "./layout/Layout";
-import { Sidebar, SidebarInfo, SidebarShare, Footer } from "./Sidebars";
+import { Sidebar, SidebarInfo, SidebarShare } from "./Sidebars";
 import styled from "styled-components";
 
 import { PitchRuler, useRulerState } from "./PitchRuler";
