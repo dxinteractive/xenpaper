@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.js": "/xenpaper/static/js/main.2cc230ff.chunk.js",
-    "main.js.map": "/xenpaper/static/js/main.2cc230ff.chunk.js.map",
+    "main.js": "/xenpaper/static/js/main.15406e59.chunk.js",
+    "main.js.map": "/xenpaper/static/js/main.15406e59.chunk.js.map",
     "runtime-main.js": "/xenpaper/static/js/runtime-main.fb2d4ee1.js",
     "runtime-main.js.map": "/xenpaper/static/js/runtime-main.fb2d4ee1.js.map",
     "static/js/2.9329afa1.chunk.js": "/xenpaper/static/js/2.9329afa1.chunk.js",
@@ -15,6 +15,6 @@
   "entrypoints": [
     "static/js/runtime-main.fb2d4ee1.js",
     "static/js/2.9329afa1.chunk.js",
-    "static/js/main.2cc230ff.chunk.js"
+    "static/js/main.15406e59.chunk.js"
   ]
 }
