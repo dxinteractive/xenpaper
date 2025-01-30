@@ -595,7 +595,6 @@ function NormalLayout(props: NormalLayoutProps): React.ReactElement {
                 {/* sidebars */}
                 {sidebar}
             </Flex>
-            <Footer display={["none", "none", "block"]} />
             {htmlTitle}
         </Flex>
     );
