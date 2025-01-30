@@ -19,9 +19,9 @@
     "@xenpaper/xenpaper-ui": "0.0.0"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
-    "eject": "craco eject"
+    "start": "PUBLIC_URL=\"/xenpaper\" DISABLE_ESLINT_PLUGIN=true craco start",
+    "build": "PUBLIC_URL=\"/xenpaper\" DISABLE_ESLINT_PLUGIN=true craco build",
+    "eject": "PUBLIC_URL=\"/xenpaper\" DISABLE_ESLINT_PLUGIN=true craco eject"
   },
   "eslintConfig": {
     "extends": [
